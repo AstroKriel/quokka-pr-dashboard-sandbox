@@ -1,5 +1,6 @@
 import datetime
 import pathlib
+import subprocess
 import unittest
 
 import commands
@@ -81,6 +82,19 @@ class TestScopeLabels(unittest.TestCase):
     def test_scripts_are_tools(self):
         scope_labels = labels.compute_scope_labels(LABEL_CONFIG, ("scripts/python/prune_checkpoints.py",))
         self.assertEqual(scope_labels, {"scope/tools"})
+
+    def test_every_repository_file_has_a_scope(self):
+        repo_root = pathlib.Path(__file__).parents[2]
+        completed_process = subprocess.run(
+            ["git", "ls-files"], cwd=repo_root, capture_output=True, text=True, check=True
+        )
+        file_paths = completed_process.stdout.splitlines()
+        unscoped_paths = [
+            _file_path
+            for _file_path in file_paths
+            if len(labels.compute_scope_labels(LABEL_CONFIG, (_file_path,))) == 0
+        ]
+        self.assertEqual(unscoped_paths, [], "Add these paths to a scope in labels.toml")
 
     def test_ci_and_documentation(self):
         file_paths = (".github/workflows/cmake.yml", "docs/index.md", "README.md")
