@@ -29,7 +29,11 @@ def make_pull_request(
     )
 
 
-def make_comment(text: str, user_name: str = "maintainer", repo_role: str = "write") -> commands.Comment:
+def make_comment(
+    text: str,
+    user_name: str = "maintainer",
+    repo_role: commands.RepoRole = commands.RepoRole.WRITE,
+) -> commands.Comment:
     user = commands.User(user_name=user_name, repo_role=repo_role)
     return commands.Comment(comment_id=99, user=user, text=text)
 
@@ -97,12 +101,12 @@ class TestAcceptReview(unittest.TestCase):
         self.assertTrue(update_plan.reply.startswith("The review date has to be today or later."))
 
     def test_without_write_access(self):
-        comment = make_comment("/accept-review 2026-11-12", user_name="contributor", repo_role="read")
+        comment = make_comment("/accept-review 2026-11-12", user_name="contributor", repo_role=commands.RepoRole.READ)
         update_plan = run_comment(make_pull_request(), comment)
         self.assertEqual(update_plan, commands.UpdatePlan(reply="Only people with write access can accept a review."))
 
     def test_triage_is_not_enough(self):
-        comment = make_comment("/accept-review 2026-11-12", user_name="triager", repo_role="triage")
+        comment = make_comment("/accept-review 2026-11-12", user_name="triager", repo_role=commands.RepoRole.TRIAGE)
         update_plan = run_comment(make_pull_request(), comment)
         self.assertEqual(update_plan, commands.UpdatePlan(reply="Only people with write access can accept a review."))
 
@@ -155,17 +159,17 @@ class TestSetPriority(unittest.TestCase):
         self.assertEqual(update_plan, commands.UpdatePlan(reply="Use `/set-priority <low|medium|high>`."))
 
     def test_author_with_read_access_can_set(self):
-        comment = make_comment("/set-priority high", user_name="pr-author", repo_role="read")
+        comment = make_comment("/set-priority high", user_name="pr-author", repo_role=commands.RepoRole.READ)
         update_plan = run_comment(make_pull_request(), comment)
         self.assertEqual(update_plan.labels_to_add, ("priority/high",))
 
     def test_triager_can_set(self):
-        comment = make_comment("/set-priority high", user_name="triager", repo_role="triage")
+        comment = make_comment("/set-priority high", user_name="triager", repo_role=commands.RepoRole.TRIAGE)
         update_plan = run_comment(make_pull_request(), comment)
         self.assertEqual(update_plan.labels_to_add, ("priority/high",))
 
     def test_outsider_is_refused(self):
-        comment = make_comment("/set-priority high", user_name="passer-by", repo_role="none")
+        comment = make_comment("/set-priority high", user_name="passer-by", repo_role=commands.RepoRole.READ)
         update_plan = run_comment(make_pull_request(), comment)
         expected_reply = "Only the PR author and people with triage access or higher can use `/set-priority`."
         self.assertEqual(update_plan, commands.UpdatePlan(reply=expected_reply))

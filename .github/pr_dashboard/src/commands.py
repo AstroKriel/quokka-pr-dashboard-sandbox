@@ -1,15 +1,40 @@
 import dataclasses
 import datetime
+import enum
 
 import labels
 
-PRIORITY_LEVELS = ("low", "medium", "high")
-ROLES_WITH_TRIAGE_ACCESS = ("triage", "write", "maintain", "admin")
-ROLES_WITH_WRITE_ACCESS = ("write", "maintain", "admin")
+
+class Priority(enum.StrEnum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
+class RepoRole(enum.StrEnum):
+    READ = "read"
+    TRIAGE = "triage"
+    WRITE = "write"
+    MAINTAIN = "maintain"
+    ADMIN = "admin"
+
+
+ROLES_WITH_TRIAGE_ACCESS = (
+    RepoRole.TRIAGE,
+    RepoRole.WRITE,
+    RepoRole.MAINTAIN,
+    RepoRole.ADMIN,
+)
+ROLES_WITH_WRITE_ACCESS = (
+    RepoRole.WRITE,
+    RepoRole.MAINTAIN,
+    RepoRole.ADMIN,
+)
+PRIORITY_CHOICES = "|".join(Priority)
 COMMAND_USAGES = {
     "/accept-review": "`/accept-review <YYYY-MM-DD>`, with the date you will review by",
     "/release-review": "`/release-review`",
-    "/set-priority": "`/set-priority <low|medium|high>`",
+    "/set-priority": f"`/set-priority <{PRIORITY_CHOICES}>`",
     "/set-milestone": "`/set-milestone <title|none>`",
     "/recompute-labels": "`/recompute-labels`",
 }
@@ -34,7 +59,7 @@ class PullRequest:
 @dataclasses.dataclass(frozen=True)
 class User:
     user_name: str
-    repo_role: str
+    repo_role: RepoRole
 
 
 @dataclasses.dataclass(frozen=True)
@@ -134,9 +159,11 @@ def release_review(pull_request: PullRequest, comment: Comment, argument: str) -
 
 
 def set_priority(pull_request: PullRequest, argument: str) -> UpdatePlan:
-    wanted_label = labels.PRIORITY_PREFIX + argument.lower()
-    if argument.lower() not in PRIORITY_LEVELS:
+    try:
+        priority = Priority(argument.lower())
+    except ValueError:
         return _usage_reply("/set-priority")
+    wanted_label = f"{labels.PRIORITY_PREFIX}{priority}"
     labels_to_remove = tuple(
         _label
         for _label in pull_request.labels

@@ -43,9 +43,10 @@ def get_pull_request(repo: str, pr_number: int) -> commands.PullRequest:
 def get_user(repo: str, user_name: str) -> commands.User:
     try:
         permission_data = _gh_api(f"repos/{repo}/collaborators/{_quote(user_name)}/permission")
-    except subprocess.CalledProcessError:
-        return commands.User(user_name=user_name, repo_role="none")
-    return commands.User(user_name=user_name, repo_role=permission_data["role_name"])
+        repo_role = commands.RepoRole(permission_data["role_name"])
+    except (subprocess.CalledProcessError, ValueError):
+        repo_role = commands.RepoRole.READ
+    return commands.User(user_name=user_name, repo_role=repo_role)
 
 
 def list_open_milestones(repo: str) -> tuple[commands.Milestone, ...]:
