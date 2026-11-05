@@ -33,18 +33,18 @@ def get_pull_request(repo: str, pr_number: int) -> commands.PullRequest:
     file_pages = _gh_api(f"repos/{repo}/pulls/{pr_number}/files?per_page=100", paginate=True)
     file_paths = tuple(_file_data["filename"] for _file_page in file_pages for _file_data in _file_page)
     return commands.PullRequest(
-        number=pr_number,
+        pr_number=pr_number,
         author=pr_data["user"]["login"],
         assignees=tuple(_assignee["login"] for _assignee in pr_data["assignees"]),
         labels=tuple(_label["name"] for _label in pr_data["labels"]),
-        lines_changed=pr_data["additions"] + pr_data["deletions"],
+        num_lines_changed=pr_data["additions"] + pr_data["deletions"],
         file_paths=file_paths,
     )
 
 
-def user_has_write_access(repo: str, login: str) -> bool:
+def user_has_write_access(repo: str, user_name: str) -> bool:
     try:
-        permission_data = _gh_api(f"repos/{repo}/collaborators/{_quote(login)}/permission")
+        permission_data = _gh_api(f"repos/{repo}/collaborators/{_quote(user_name)}/permission")
     except subprocess.CalledProcessError:
         return False
     return permission_data["role_name"] in WRITE_ROLES
@@ -53,7 +53,7 @@ def user_has_write_access(repo: str, login: str) -> bool:
 def list_open_milestones(repo: str) -> tuple[commands.Milestone, ...]:
     milestone_pages = _gh_api(f"repos/{repo}/milestones?state=open&per_page=100", paginate=True)
     return tuple(
-        commands.Milestone(number=_milestone_data["number"], title=_milestone_data["title"])
+        commands.Milestone(milestone_number=_milestone_data["number"], title=_milestone_data["title"])
         for _milestone_page in milestone_pages
         for _milestone_data in _milestone_page
     )
@@ -74,23 +74,22 @@ def update_label(repo: str, current_name: str, name: str, color: str, descriptio
     _gh_api(f"repos/{repo}/labels/{_quote(current_name)}", method="PATCH", fields=label_fields)
 
 
-def apply_outcome(repo: str, pr_number: int, comment_id: int | None, outcome: commands.Outcome) -> None:
+def apply_update_plan(repo: str, pr_number: int, comment_id: int | None, update_plan: commands.UpdatePlan) -> None:
     issue_endpoint = f"repos/{repo}/issues/{pr_number}"
-    for label in outcome.labels_to_remove:
+    for label in update_plan.labels_to_remove:
         _gh_api(f"{issue_endpoint}/labels/{_quote(label)}", method="DELETE")
-    if len(outcome.labels_to_add) > 0:
-        _gh_api(f"{issue_endpoint}/labels", method="POST", fields={"labels": list(outcome.labels_to_add)})
-    if len(outcome.assignees_to_remove) > 0:
-        assignee_fields = {"assignees": list(outcome.assignees_to_remove)}
+    if len(update_plan.labels_to_add) > 0:
+        _gh_api(f"{issue_endpoint}/labels", method="POST", fields={"labels": list(update_plan.labels_to_add)})
+    if len(update_plan.assignees_to_remove) > 0:
+        assignee_fields = {"assignees": list(update_plan.assignees_to_remove)}
         _gh_api(f"{issue_endpoint}/assignees", method="DELETE", fields=assignee_fields)
-    if len(outcome.assignees_to_add) > 0:
-        assignee_fields = {"assignees": list(outcome.assignees_to_add)}
+    if len(update_plan.assignees_to_add) > 0:
+        assignee_fields = {"assignees": list(update_plan.assignees_to_add)}
         _gh_api(f"{issue_endpoint}/assignees", method="POST", fields=assignee_fields)
-    if outcome.clear_milestone:
-        _gh_api(issue_endpoint, method="PATCH", fields={"milestone": None})
-    if outcome.milestone_number is not None:
-        _gh_api(issue_endpoint, method="PATCH", fields={"milestone": outcome.milestone_number})
-    if outcome.reply is not None:
-        _gh_api(f"{issue_endpoint}/comments", method="POST", fields={"body": outcome.reply})
-    if outcome.react and (comment_id is not None):
+    if update_plan.milestone_change is not None:
+        milestone_fields = {"milestone": update_plan.milestone_change.milestone_number}
+        _gh_api(issue_endpoint, method="PATCH", fields=milestone_fields)
+    if update_plan.reply is not None:
+        _gh_api(f"{issue_endpoint}/comments", method="POST", fields={"body": update_plan.reply})
+    if update_plan.react and (comment_id is not None):
         _gh_api(f"repos/{repo}/issues/comments/{comment_id}/reactions", method="POST", fields={"content": "+1"})

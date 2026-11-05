@@ -3,7 +3,7 @@
 # scope/ labels are set from the changed files: a PR gets every scope with a matching path.
 # A pattern's `*` also matches `/`, so `src/hydro/*` covers every file below `src/hydro/`.
 # size/ labels are set from the lines changed (additions plus deletions): a PR gets the
-# largest `min_lines` it reaches.
+# largest `min_num_lines` it reaches.
 # `renamed_from` renames an existing label, which keeps it on every issue and PR.
 
 default_priority = "priority/medium"
@@ -203,35 +203,35 @@ name = "size/XS"
 color = "00FF00"
 description = "This PR changes 0 to 9 lines"
 renamed_from = "size:XS"
-min_lines = 0
+min_num_lines =0
 
 [[label]]
 name = "size/S"
 color = "77B800"
 description = "This PR changes 10 to 29 lines"
 renamed_from = "size:S"
-min_lines = 10
+min_num_lines =10
 
 [[label]]
 name = "size/M"
 color = "EBB800"
 description = "This PR changes 30 to 99 lines"
 renamed_from = "size:M"
-min_lines = 30
+min_num_lines =30
 
 [[label]]
 name = "size/L"
 color = "EB9500"
 description = "This PR changes 100 to 499 lines"
 renamed_from = "size:L"
-min_lines = 100
+min_num_lines =100
 
 [[label]]
 name = "size/XL"
 color = "FF823F"
 description = "This PR changes 500 or more lines"
 renamed_from = "size:XL"
-min_lines = 500
+min_num_lines =500
 
 [[label]]
 name = "priority/low"

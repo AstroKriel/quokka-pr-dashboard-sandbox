@@ -9,21 +9,21 @@ import commands
 import github_api
 import labels
 
-LABEL_CONFIG_PATH = pathlib.Path(__file__).parent / "labels.toml"
+LABEL_CONFIG_PATH = pathlib.Path(__file__).parents[1] / "labels.toml"
 
 
-def _print_outcome(outcome: commands.Outcome) -> None:
-    print(json.dumps(dataclasses.asdict(outcome), indent=2))
+def _print_update_plan(update_plan: commands.UpdatePlan) -> None:
+    print(json.dumps(dataclasses.asdict(update_plan), indent=2))
 
 
 def label_pr(repo: str, pr_number: int, dry_run: bool) -> None:
     label_config = labels.load_label_config(LABEL_CONFIG_PATH)
     pull_request = github_api.get_pull_request(repo, pr_number)
-    outcome = commands.recompute_labels(label_config, pull_request, argument="")
-    unreacted_outcome = dataclasses.replace(outcome, react=False)
-    _print_outcome(unreacted_outcome)
+    update_plan = commands.recompute_labels(label_config, pull_request, argument="")
+    unreacted_update_plan = dataclasses.replace(update_plan, react=False)
+    _print_update_plan(unreacted_update_plan)
     if not dry_run:
-        github_api.apply_outcome(repo, pr_number, comment_id=None, outcome=unreacted_outcome)
+        github_api.apply_update_plan(repo, pr_number, comment_id=None, update_plan=unreacted_update_plan)
 
 
 def handle_comment(repo: str, event_path: str) -> None:
@@ -31,24 +31,24 @@ def handle_comment(repo: str, event_path: str) -> None:
         event_data = json.load(event_file)
     if "pull_request" not in event_data["issue"]:
         return
-    comment_body = event_data["comment"]["body"]
-    if commands.parse_command(comment_body) is None:
+    comment_text = event_data["comment"]["body"]
+    if commands.parse_command(comment_text) is None:
         return
     pr_number = event_data["issue"]["number"]
-    comment_author = event_data["comment"]["user"]["login"]
+    user_name = event_data["comment"]["user"]["login"]
     comment = commands.Comment(
         comment_id=event_data["comment"]["id"],
-        author=comment_author,
-        author_has_write_access=github_api.user_has_write_access(repo, comment_author),
-        body=comment_body,
+        user_name=user_name,
+        has_write_access=github_api.user_has_write_access(repo, user_name),
+        text=comment_text,
     )
     label_config = labels.load_label_config(LABEL_CONFIG_PATH)
     pull_request = github_api.get_pull_request(repo, pr_number)
     open_milestones = github_api.list_open_milestones(repo)
     today = datetime.datetime.now(datetime.timezone.utc).date()
-    outcome = commands.handle_comment(label_config, pull_request, comment, open_milestones, today)
-    _print_outcome(outcome)
-    github_api.apply_outcome(repo, pr_number, comment_id=comment.comment_id, outcome=outcome)
+    update_plan = commands.handle_comment(label_config, pull_request, comment, open_milestones, today)
+    _print_update_plan(update_plan)
+    github_api.apply_update_plan(repo, pr_number, comment_id=comment.comment_id, update_plan=update_plan)
 
 
 def _label_sync_step(label_definition: labels.LabelDefinition, repo_labels: dict[str, dict]) -> tuple[str, str] | None:
