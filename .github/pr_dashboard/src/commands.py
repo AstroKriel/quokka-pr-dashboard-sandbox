@@ -85,7 +85,9 @@ class UpdatePlan:
     react: bool = False
 
 
-def parse_command(comment_text: str) -> tuple[str, str] | None:
+def parse_command(
+    comment_text: str,
+) -> tuple[str, str] | None:
     lines = comment_text.strip().splitlines()
     if len(lines) == 0:
         return None
@@ -99,11 +101,15 @@ def parse_command(comment_text: str) -> tuple[str, str] | None:
         return command_name, first_line_words[1].strip()
 
 
-def _usage_reply(command_name: str) -> UpdatePlan:
+def _usage_reply(
+    command_name: str,
+) -> UpdatePlan:
     return UpdatePlan(reply=f"Use {COMMAND_USAGES[command_name]}.")
 
 
-def _mention_list(user_names: tuple[str, ...]) -> str:
+def _mention_list(
+    user_names: tuple[str, ...],
+) -> str:
     mentions = [f"@{_user_name}" for _user_name in user_names]
     if len(mentions) == 1:
         return mentions[0]
@@ -111,7 +117,9 @@ def _mention_list(user_names: tuple[str, ...]) -> str:
         return ", ".join(mentions[:-1]) + " and " + mentions[-1]
 
 
-def _review_taken_reply(assignees: tuple[str, ...]) -> str:
+def _review_taken_reply(
+    assignees: tuple[str, ...],
+) -> str:
     if len(assignees) == 1:
         verb = "has"
     else:
@@ -122,11 +130,20 @@ def _review_taken_reply(assignees: tuple[str, ...]) -> str:
     )
 
 
-def _author_or_triage_only_reply(command_name: str) -> UpdatePlan:
-    return UpdatePlan(reply=f"Only the PR author and people with triage access or higher can use `{command_name}`.")
+def _author_or_triage_only_reply(
+    command_name: str,
+) -> UpdatePlan:
+    return UpdatePlan(
+        reply=f"Only the PR author and people with triage access or higher can use `{command_name}`."
+    )
 
 
-def accept_review(pull_request: PullRequest, comment: Comment, argument: str, today: datetime.date) -> UpdatePlan:
+def accept_review(
+    pull_request: PullRequest,
+    comment: Comment,
+    argument: str,
+    today: datetime.date,
+) -> UpdatePlan:
     try:
         review_date = datetime.date.fromisoformat(argument)
     except ValueError:
@@ -138,63 +155,100 @@ def accept_review(pull_request: PullRequest, comment: Comment, argument: str, to
     elif review_date is None:
         return _usage_reply("/accept-review")
     elif review_date < today:
-        return UpdatePlan(reply=f"The review date has to be today or later. Use {COMMAND_USAGES['/accept-review']}.")
-    elif pull_request.assignees == (comment.user.user_name,):
+        return UpdatePlan(
+            reply=f"The review date has to be today or later. Use {COMMAND_USAGES['/accept-review']}."
+        )
+    elif pull_request.assignees == (comment.user.user_name, ):
         return UpdatePlan(react=True)
     elif len(pull_request.assignees) > 0:
         return UpdatePlan(reply=_review_taken_reply(pull_request.assignees))
     else:
-        return UpdatePlan(assignees_to_add=(comment.user.user_name,), react=True)
+        return UpdatePlan(
+            assignees_to_add=(comment.user.user_name, ),
+            react=True,
+        )
 
 
-def release_review(pull_request: PullRequest, comment: Comment, argument: str) -> UpdatePlan:
+def release_review(
+    pull_request: PullRequest,
+    comment: Comment,
+    argument: str,
+) -> UpdatePlan:
     if argument != "":
         return _usage_reply("/release-review")
     elif comment.user.user_name in pull_request.assignees:
-        return UpdatePlan(assignees_to_remove=(comment.user.user_name,), react=True)
+        return UpdatePlan(
+            assignees_to_remove=(comment.user.user_name, ),
+            react=True,
+        )
     elif len(pull_request.assignees) > 0:
-        return UpdatePlan(reply=f"{_mention_list(pull_request.assignees)} accepted this review, so only they can release it.")
+        return UpdatePlan(
+            reply=f"{_mention_list(pull_request.assignees)} accepted this review, so only they can release it."
+        )
     else:
         return UpdatePlan(reply="Nobody has accepted this review yet.")
 
 
-def set_priority(pull_request: PullRequest, argument: str) -> UpdatePlan:
+def set_priority(
+    pull_request: PullRequest,
+    argument: str,
+) -> UpdatePlan:
     try:
         priority = Priority(argument.lower())
     except ValueError:
         return _usage_reply("/set-priority")
     wanted_label = f"{labels.PRIORITY_PREFIX}{priority}"
     labels_to_remove = tuple(
-        _label
-        for _label in pull_request.labels
+        _label for _label in pull_request.labels
         if (_label.startswith(labels.PRIORITY_PREFIX)) and (_label != wanted_label)
     )
     if wanted_label in pull_request.labels:
         labels_to_add = ()
     else:
-        labels_to_add = (wanted_label,)
-    return UpdatePlan(labels_to_add=labels_to_add, labels_to_remove=labels_to_remove, react=True)
+        labels_to_add = (wanted_label, )
+    return UpdatePlan(
+        labels_to_add=labels_to_add,
+        labels_to_remove=labels_to_remove,
+        react=True,
+    )
 
 
-def set_milestone(open_milestones: tuple[Milestone, ...], argument: str) -> UpdatePlan:
+def set_milestone(
+    open_milestones: tuple[Milestone, ...],
+    argument: str,
+) -> UpdatePlan:
     matching_milestones = [
         _milestone for _milestone in open_milestones if _milestone.title.lower() == argument.lower()
     ]
     if argument == "":
         return _usage_reply("/set-milestone")
     elif argument.lower() == "none":
-        return UpdatePlan(milestone_change=MilestoneChange(milestone_number=None), react=True)
+        return UpdatePlan(
+            milestone_change=MilestoneChange(milestone_number=None),
+            react=True,
+        )
     elif len(matching_milestones) > 0:
         milestone_change = MilestoneChange(milestone_number=matching_milestones[0].milestone_number)
-        return UpdatePlan(milestone_change=milestone_change, react=True)
+        return UpdatePlan(
+            milestone_change=milestone_change,
+            react=True,
+        )
     elif len(open_milestones) == 0:
-        return UpdatePlan(reply=f'No open milestone is called "{argument}", and there are no open milestones.')
+        return UpdatePlan(
+            reply=f'No open milestone is called "{argument}", and there are no open milestones.'
+        )
     else:
         milestone_titles = ", ".join(f"`{_milestone.title}`" for _milestone in open_milestones)
-        return UpdatePlan(reply=f'No open milestone is called "{argument}". The open milestones are {milestone_titles}.')
+        return UpdatePlan(
+            reply=f'No open milestone is called "{argument}". The open milestones are {milestone_titles}.'
+        )
 
 
-def recompute_labels(label_config: labels.LabelConfig, pull_request: PullRequest, argument: str) -> UpdatePlan:
+def recompute_labels(
+    label_config: labels.LabelConfig,
+    pull_request: PullRequest,
+    argument: str,
+) -> UpdatePlan:
     if argument != "":
         return _usage_reply("/recompute-labels")
     label_changes = labels.compute_label_changes(

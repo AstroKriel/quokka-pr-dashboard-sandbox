@@ -12,21 +12,40 @@ import labels
 LABEL_CONFIG_PATH = pathlib.Path(__file__).parents[1] / "labels.toml"
 
 
-def _print_update_plan(update_plan: commands.UpdatePlan) -> None:
-    print(json.dumps(dataclasses.asdict(update_plan), indent=2))
+def _print_update_plan(
+    update_plan: commands.UpdatePlan,
+) -> None:
+    print(
+        json.dumps(
+            dataclasses.asdict(update_plan),
+            indent=2,
+        ),
+    )
 
 
-def label_pr(repo: str, pr_number: int, dry_run: bool) -> None:
+def label_pr(
+    repo: str,
+    pr_number: int,
+    dry_run: bool,
+) -> None:
     label_config = labels.load_label_config(LABEL_CONFIG_PATH)
     pull_request = github_api.get_pull_request(repo, pr_number)
     update_plan = commands.recompute_labels(label_config, pull_request, argument="")
     unreacted_update_plan = dataclasses.replace(update_plan, react=False)
     _print_update_plan(unreacted_update_plan)
     if not dry_run:
-        github_api.apply_update_plan(repo, pr_number, comment_id=None, update_plan=unreacted_update_plan)
+        github_api.apply_update_plan(
+            repo,
+            pr_number,
+            comment_id=None,
+            update_plan=unreacted_update_plan,
+        )
 
 
-def handle_comment(repo: str, event_path: str) -> None:
+def handle_comment(
+    repo: str,
+    event_path: str,
+) -> None:
     with open(event_path) as event_file:
         event_data = json.load(event_file)
     if "pull_request" not in event_data["issue"]:
@@ -36,33 +55,46 @@ def handle_comment(repo: str, event_path: str) -> None:
         return
     pr_number = event_data["issue"]["number"]
     user = github_api.get_user(repo, event_data["comment"]["user"]["login"])
-    comment = commands.Comment(comment_id=event_data["comment"]["id"], user=user, text=comment_text)
+    comment = commands.Comment(
+        comment_id=event_data["comment"]["id"],
+        user=user,
+        text=comment_text,
+    )
     label_config = labels.load_label_config(LABEL_CONFIG_PATH)
     pull_request = github_api.get_pull_request(repo, pr_number)
     open_milestones = github_api.list_open_milestones(repo)
     today = datetime.datetime.now(datetime.timezone.utc).date()
     update_plan = commands.handle_comment(label_config, pull_request, comment, open_milestones, today)
     _print_update_plan(update_plan)
-    github_api.apply_update_plan(repo, pr_number, comment_id=comment.comment_id, update_plan=update_plan)
+    github_api.apply_update_plan(
+        repo,
+        pr_number,
+        comment_id=comment.comment_id,
+        update_plan=update_plan,
+    )
 
 
-def _label_sync_step(label_definition: labels.LabelDefinition, repo_labels: dict[str, dict]) -> tuple[str, str] | None:
+def _label_sync_step(
+    label_definition: labels.LabelDefinition,
+    repo_labels: dict[str, dict],
+) -> tuple[str, str] | None:
     existing_label = repo_labels.get(label_definition.name)
     renamable_label = repo_labels.get(label_definition.renamed_from)
     if (existing_label is None) and (renamable_label is None):
         return "create", label_definition.name
     elif existing_label is None:
         return "rename", label_definition.renamed_from
-    elif (
-        (existing_label["color"].lower() == label_definition.color.lower())
-        and (existing_label["description"] == label_definition.description)
-    ):
+    elif ((existing_label["color"].lower() == label_definition.color.lower())
+          and (existing_label["description"] == label_definition.description)):
         return None
     else:
         return "update", label_definition.name
 
 
-def sync_label_set(repo: str, dry_run: bool) -> None:
+def sync_label_set(
+    repo: str,
+    dry_run: bool,
+) -> None:
     label_config = labels.load_label_config(LABEL_CONFIG_PATH)
     repo_labels = github_api.list_repo_labels(repo)
     for label_definition in label_config.label_definitions:
@@ -74,10 +106,16 @@ def sync_label_set(repo: str, dry_run: bool) -> None:
         if dry_run:
             continue
         elif sync_action == "create":
-            github_api.create_label(repo, label_definition.name, label_definition.color, label_definition.description)
+            github_api.create_label(
+                repo, label_definition.name, label_definition.color, label_definition.description
+            )
         else:
             github_api.update_label(
-                repo, current_name, label_definition.name, label_definition.color, label_definition.description
+                repo,
+                current_name,
+                label_definition.name,
+                label_definition.color,
+                label_definition.description,
             )
 
 
