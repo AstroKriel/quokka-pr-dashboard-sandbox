@@ -1,0 +1,22 @@
+name: 🧪 PR Dashboard Tests
+
+on:
+  pull_request:
+    paths:
+      - .github/pr_dashboard/**
+      - .github/workflows/pr-dashboard-*.yml
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Run the offline tests
+        run: python3 -m unittest discover --start-directory .github/pr_dashboard --pattern "test_*.py"

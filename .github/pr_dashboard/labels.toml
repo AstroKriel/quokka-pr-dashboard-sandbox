@@ -1,0 +1,172 @@
+# The labels used by the PR dashboard. Labels not listed here are left alone.
+#
+# scope/ labels are set from the changed files: a PR gets every scope with a matching path.
+# A pattern's `*` also matches `/`, so `src/hydro/*` covers every file below `src/hydro/`.
+# size/ labels are set from the lines changed (additions plus deletions): a PR gets the
+# largest `min_lines` it reaches.
+# `renamed_from` renames an existing label, which keeps it on every issue and PR.
+
+default_priority = "priority/medium"
+
+[scope_fallback]
+label = "scope/core"
+paths = ["src/*"]
+
+[[label]]
+name = "scope/hydro"
+color = "4ADD08"
+description = "Hydrodynamics"
+renamed_from = "hydro"
+paths = ["src/hydro/*", "src/problems/Hydro*", "src/problems/Nscbc*"]
+
+[[label]]
+name = "scope/MHD"
+color = "66735C"
+description = "Magnetohydrodynamics"
+renamed_from = "MHD"
+paths = [
+    "src/hydro/mhd_system*",
+    "src/hydro/HLLD*",
+    "src/hydro/LLF_mhd*",
+    "src/problems/MHD*",
+    "src/problems/IsothermalMHD*",
+    "src/problems/OrszagTang*",
+    "src/problems/FieldLoop*",
+    "src/problems/CurrentSheet*",
+]
+
+[[label]]
+name = "scope/radiation"
+color = "CAD629"
+description = "Radiation transport"
+renamed_from = "radiation"
+paths = ["src/radiation/*", "src/problems/Rad*", "src/problems/Stromgren*"]
+
+[[label]]
+name = "scope/particles"
+color = "277120"
+description = "Particles"
+renamed_from = "particles"
+paths = [
+    "src/particles/*",
+    "src/problems/Particle*",
+    "src/problems/BinaryOrbit*",
+    "src/problems/GravRadParticle*",
+    "src/problems/InitialStellarParticles*",
+]
+
+[[label]]
+name = "scope/chemistry"
+color = "C5DEF5"
+description = "Chemistry and chemical networks"
+paths = [
+    "src/chemistry/*",
+    "src/networks/*",
+    "src/problems/PrimordialChem*",
+    "src/problems/PopIII*",
+]
+
+[[label]]
+name = "scope/cooling"
+color = "BFD4F2"
+description = "Radiative cooling"
+paths = ["src/cooling/*", "src/problems/ResampledCooling*"]
+
+[[label]]
+name = "scope/dust"
+color = "D4C5F9"
+description = "Dust"
+paths = ["src/dust/*", "src/problems/Dust*", "src/problems/RadDust*", "src/problems/RadMarshakDust*"]
+
+[[label]]
+name = "scope/conduction"
+color = "F9D0C4"
+description = "Thermal conduction"
+paths = ["src/conduction/*", "src/problems/ThermalConduction*"]
+
+[[label]]
+name = "scope/IO"
+color = "1D76DB"
+description = "Input and output"
+renamed_from = "I/O"
+paths = ["src/io/*"]
+
+[[label]]
+name = "scope/core"
+color = "5319E7"
+description = "The shared driver, math and utilities"
+paths = [
+    "src/QuokkaSimulation*",
+    "src/simulation*",
+    "src/hyperbolic_system*",
+    "src/physics_info*",
+    "src/physics_numVars*",
+    "src/math/*",
+    "src/util/*",
+]
+
+[[label]]
+name = "scope/CI"
+color = "BFDADC"
+description = "Continuous integration and regression testing"
+renamed_from = "CI"
+paths = [".github/*", ".ci/*", ".devcontainer/*", ".pre-commit-config.yaml", "regression/*"]
+
+[[label]]
+name = "scope/documentation"
+color = "0075CA"
+description = "Documentation"
+renamed_from = "documentation"
+paths = ["docs/*", "*.md"]
+
+[[label]]
+name = "size/XS"
+color = "00FF00"
+description = "This PR changes 0 to 9 lines"
+renamed_from = "size:XS"
+min_lines = 0
+
+[[label]]
+name = "size/S"
+color = "77B800"
+description = "This PR changes 10 to 29 lines"
+renamed_from = "size:S"
+min_lines = 10
+
+[[label]]
+name = "size/M"
+color = "EBB800"
+description = "This PR changes 30 to 99 lines"
+renamed_from = "size:M"
+min_lines = 30
+
+[[label]]
+name = "size/L"
+color = "EB9500"
+description = "This PR changes 100 to 499 lines"
+renamed_from = "size:L"
+min_lines = 100
+
+[[label]]
+name = "size/XL"
+color = "FF823F"
+description = "This PR changes 500 or more lines"
+renamed_from = "size:XL"
+min_lines = 500
+
+[[label]]
+name = "priority/low"
+color = "0E8A16"
+description = "Review when there is time"
+renamed_from = "priority:low"
+
+[[label]]
+name = "priority/medium"
+color = "FBCA04"
+description = "Review at the normal pace"
+
+[[label]]
+name = "priority/high"
+color = "D93F0B"
+description = "Review soon"
+renamed_from = "priority:high"
