@@ -11,7 +11,7 @@ class Priority(enum.StrEnum):
     HIGH = "high"
 
 
-class RepoRole(enum.StrEnum):
+class RoleInRepo(enum.StrEnum):
     READ = "read"
     TRIAGE = "triage"
     WRITE = "write"
@@ -20,15 +20,15 @@ class RepoRole(enum.StrEnum):
 
 
 ROLES_WITH_TRIAGE_ACCESS = (
-    RepoRole.TRIAGE,
-    RepoRole.WRITE,
-    RepoRole.MAINTAIN,
-    RepoRole.ADMIN,
+    RoleInRepo.TRIAGE,
+    RoleInRepo.WRITE,
+    RoleInRepo.MAINTAIN,
+    RoleInRepo.ADMIN,
 )
 ROLES_WITH_WRITE_ACCESS = (
-    RepoRole.WRITE,
-    RepoRole.MAINTAIN,
-    RepoRole.ADMIN,
+    RoleInRepo.WRITE,
+    RoleInRepo.MAINTAIN,
+    RoleInRepo.ADMIN,
 )
 PRIORITY_CHOICES = "|".join(Priority)
 COMMAND_USAGES = {
@@ -59,7 +59,7 @@ class PullRequest:
 @dataclasses.dataclass(frozen=True)
 class User:
     user_name: str
-    repo_role: RepoRole
+    role_in_repo: RoleInRepo
 
 
 @dataclasses.dataclass(frozen=True)
@@ -131,7 +131,7 @@ def accept_review(pull_request: PullRequest, comment: Comment, argument: str, to
         review_date = datetime.date.fromisoformat(argument)
     except ValueError:
         review_date = None
-    if comment.user.repo_role not in ROLES_WITH_WRITE_ACCESS:
+    if comment.user.role_in_repo not in ROLES_WITH_WRITE_ACCESS:
         return UpdatePlan(reply="Only people with write access can accept a review.")
     elif comment.user.user_name == pull_request.author:
         return UpdatePlan(reply="You can't accept the review of your own PR.")
@@ -223,7 +223,7 @@ def handle_comment(
     command_name, argument = parsed_command
     commenter_is_author_or_triager = (
         (comment.user.user_name == pull_request.author)
-        or (comment.user.repo_role in ROLES_WITH_TRIAGE_ACCESS)
+        or (comment.user.role_in_repo in ROLES_WITH_TRIAGE_ACCESS)
     )
     if command_name == "/accept-review":
         return accept_review(pull_request, comment, argument, today)
