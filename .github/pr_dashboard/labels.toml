@@ -9,15 +9,22 @@
 default_priority = "priority/medium"
 
 [scope_fallback]
-label = "scope/core"
-paths = ["src/*"]
+label = "scope/tests"
+paths = ["src/problems/*", "inputs/*", "extern/*"]
 
 [[label]]
 name = "scope/hydro"
 color = "4ADD08"
 description = "Hydrodynamics"
 renamed_from = "hydro"
-paths = ["src/hydro/*", "src/problems/Hydro*", "src/problems/Nscbc*"]
+paths = [
+    "src/hydro/*",
+    "src/turbulence/*",
+    "src/problems/Hydro*",
+    "src/problems/Nscbc*",
+    "inputs/Hydro*",
+    "inputs/Nscbc*",
+]
 
 [[label]]
 name = "scope/MHD"
@@ -33,6 +40,12 @@ paths = [
     "src/problems/OrszagTang*",
     "src/problems/FieldLoop*",
     "src/problems/CurrentSheet*",
+    "inputs/MHD*",
+    "inputs/IsothermalMHD*",
+    "inputs/OrszagTang*",
+    "inputs/FieldLoop*",
+    "inputs/CurrentSheet*",
+    "inputs/alfven_wave*",
 ]
 
 [[label]]
@@ -40,7 +53,13 @@ name = "scope/radiation"
 color = "CAD629"
 description = "Radiation transport"
 renamed_from = "radiation"
-paths = ["src/radiation/*", "src/problems/Rad*", "src/problems/Stromgren*"]
+paths = [
+    "src/radiation/*",
+    "src/problems/Rad*",
+    "src/problems/Stromgren*",
+    "inputs/Rad*",
+    "inputs/Stromgren*",
+]
 
 [[label]]
 name = "scope/particles"
@@ -53,6 +72,9 @@ paths = [
     "src/problems/BinaryOrbit*",
     "src/problems/GravRadParticle*",
     "src/problems/InitialStellarParticles*",
+    "inputs/Particle*",
+    "inputs/BinaryOrbit*",
+    "inputs/GravRadParticle*",
 ]
 
 [[label]]
@@ -62,27 +84,38 @@ description = "Chemistry and chemical networks"
 paths = [
     "src/chemistry/*",
     "src/networks/*",
+    "src/microphysics/*",
     "src/problems/PrimordialChem*",
     "src/problems/PopIII*",
+    "inputs/PrimordialChem*",
+    "inputs/PopIII*",
 ]
 
 [[label]]
 name = "scope/cooling"
 color = "BFD4F2"
 description = "Radiative cooling"
-paths = ["src/cooling/*", "src/problems/ResampledCooling*"]
+paths = ["src/cooling/*", "src/problems/ResampledCooling*", "inputs/ResampledCooling*"]
 
 [[label]]
 name = "scope/dust"
 color = "D4C5F9"
 description = "Dust"
-paths = ["src/dust/*", "src/problems/Dust*", "src/problems/RadDust*", "src/problems/RadMarshakDust*"]
+paths = [
+    "src/dust/*",
+    "src/problems/Dust*",
+    "src/problems/RadDust*",
+    "src/problems/RadMarshakDust*",
+    "inputs/Dust*",
+    "inputs/RadDust*",
+    "inputs/RadMarshakDust*",
+]
 
 [[label]]
 name = "scope/conduction"
 color = "F9D0C4"
 description = "Thermal conduction"
-paths = ["src/conduction/*", "src/problems/ThermalConduction*"]
+paths = ["src/conduction/*", "src/problems/ThermalConduction*", "inputs/ThermalConduction*"]
 
 [[label]]
 name = "scope/IO"
@@ -103,21 +136,67 @@ paths = [
     "src/physics_numVars*",
     "src/math/*",
     "src/util/*",
+    "src/main*",
+    "src/grid*",
+    "src/SimulationData*",
+    "src/Factory*",
+    "src/linear_advection/*",
 ]
+
+[[label]]
+name = "scope/build"
+color = "C2E0C6"
+description = "The build system and third-party libraries"
+paths = [
+    "CMakeLists.txt",
+    "src/CMakeLists.txt",
+    "*.cmake",
+    ".gitmodules",
+    ".gitignore",
+    "extern/amrex*",
+    "extern/AMReX-Hydro*",
+    "extern/Microphysics*",
+    "extern/openPMD-api*",
+]
+
+[[label]]
+name = "scope/tests"
+color = "FEF2C0"
+description = "Test problems, inputs, reference data and the regression suite"
+paths = ["regression/*", "tests/*"]
+
+[[label]]
+name = "scope/tools"
+color = "E99695"
+description = "Helper scripts and files for AI agents"
+paths = ["scripts/*", ".agents/*", ".claude/*", "AGENTS.md", "CLAUDE.md", "context7.json"]
 
 [[label]]
 name = "scope/CI"
 color = "BFDADC"
-description = "Continuous integration and regression testing"
+description = "Continuous integration and code checkers"
 renamed_from = "CI"
-paths = [".github/*", ".ci/*", ".devcontainer/*", ".pre-commit-config.yaml", "regression/*"]
+paths = [
+    ".github/*",
+    ".ci/*",
+    ".devcontainer/*",
+    ".dockerignore",
+    ".pre-commit-config.yaml",
+    ".codespellrc",
+    ".codespell-ignore-words",
+    ".sonarcloud.properties",
+    "run-codeql.sh",
+    "src/.clang-format",
+    "src/.clang-tidy",
+    "src/CPPLINT.cfg",
+]
 
 [[label]]
 name = "scope/documentation"
 color = "0075CA"
 description = "Documentation"
 renamed_from = "documentation"
-paths = ["docs/*", "*.md"]
+paths = ["docs/*", "*.md", "paper/*", "CITATION.cff", "LICENSE", ".mailmap"]
 
 [[label]]
 name = "size/XS"

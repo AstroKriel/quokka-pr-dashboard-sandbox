@@ -55,13 +55,32 @@ class TestScopeLabels(unittest.TestCase):
         scope_labels = labels.compute_scope_labels(LABEL_CONFIG, file_paths)
         self.assertEqual(scope_labels, {"scope/MHD", "scope/radiation", "scope/dust", "scope/particles"})
 
-    def test_unmatched_source_file_falls_back_to_core(self):
-        scope_labels = labels.compute_scope_labels(LABEL_CONFIG, ("src/problems/SN/test_sn.cpp",))
-        self.assertEqual(scope_labels, {"scope/core"})
+    def test_inputs_follow_their_problem(self):
+        file_paths = ("inputs/MHDBlast.toml", "inputs/alfven_wave_linear_regression.toml")
+        scope_labels = labels.compute_scope_labels(LABEL_CONFIG, file_paths)
+        self.assertEqual(scope_labels, {"scope/MHD"})
 
-    def test_file_outside_source_with_no_match_gets_no_scope(self):
-        scope_labels = labels.compute_scope_labels(LABEL_CONFIG, ("scripts/plot_slice.py",))
-        self.assertEqual(scope_labels, set())
+    def test_unclaimed_problem_falls_back_to_tests(self):
+        file_paths = ("src/problems/SN/testSN.cpp", "inputs/SN.toml", "extern/Toro/e1rpex.ini")
+        scope_labels = labels.compute_scope_labels(LABEL_CONFIG, file_paths)
+        self.assertEqual(scope_labels, {"scope/tests"})
+
+    def test_claimed_problem_does_not_also_get_tests(self):
+        scope_labels = labels.compute_scope_labels(LABEL_CONFIG, ("src/problems/RadTube/testRadTube.cpp",))
+        self.assertEqual(scope_labels, {"scope/radiation"})
+
+    def test_build_files_and_libraries(self):
+        file_paths = ("src/CMakeLists.txt", "src/problems/ProblemHelpers.cmake", "extern/amrex")
+        scope_labels = labels.compute_scope_labels(LABEL_CONFIG, file_paths)
+        self.assertEqual(scope_labels, {"scope/build"})
+
+    def test_source_file_outside_any_area_gets_no_core(self):
+        scope_labels = labels.compute_scope_labels(LABEL_CONFIG, ("src/problems/CMakeLists.txt",))
+        self.assertEqual(scope_labels, {"scope/tests"})
+
+    def test_scripts_are_tools(self):
+        scope_labels = labels.compute_scope_labels(LABEL_CONFIG, ("scripts/python/prune_checkpoints.py",))
+        self.assertEqual(scope_labels, {"scope/tools"})
 
     def test_ci_and_documentation(self):
         file_paths = (".github/workflows/cmake.yml", "docs/index.md", "README.md")
