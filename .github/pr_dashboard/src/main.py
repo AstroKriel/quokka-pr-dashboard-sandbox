@@ -35,13 +35,8 @@ def handle_comment(repo: str, event_path: str) -> None:
     if commands.parse_command(comment_text) is None:
         return
     pr_number = event_data["issue"]["number"]
-    user_name = event_data["comment"]["user"]["login"]
-    comment = commands.Comment(
-        comment_id=event_data["comment"]["id"],
-        user_name=user_name,
-        has_write_access=github_api.user_has_write_access(repo, user_name),
-        text=comment_text,
-    )
+    user = github_api.get_user(repo, event_data["comment"]["user"]["login"])
+    comment = commands.Comment(comment_id=event_data["comment"]["id"], user=user, text=comment_text)
     label_config = labels.load_label_config(LABEL_CONFIG_PATH)
     pull_request = github_api.get_pull_request(repo, pr_number)
     open_milestones = github_api.list_open_milestones(repo)

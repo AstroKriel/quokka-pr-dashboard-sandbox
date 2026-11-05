@@ -4,6 +4,8 @@ import datetime
 import labels
 
 PRIORITY_LEVELS = ("low", "medium", "high")
+ROLES_WITH_TRIAGE_ACCESS = ("triage", "write", "maintain", "admin")
+ROLES_WITH_WRITE_ACCESS = ("write", "maintain", "admin")
 COMMAND_USAGES = {
     "/accept-review": "`/accept-review <YYYY-MM-DD>`, with the date you will review by",
     "/release-review": "`/release-review`",
@@ -30,10 +32,15 @@ class PullRequest:
 
 
 @dataclasses.dataclass(frozen=True)
+class User:
+    user_name: str
+    repo_role: str
+
+
+@dataclasses.dataclass(frozen=True)
 class Comment:
     comment_id: int
-    user_name: str
-    has_write_access: bool
+    user: User
     text: str
 
 
@@ -90,8 +97,8 @@ def _review_taken_reply(assignees: tuple[str, ...]) -> str:
     )
 
 
-def _author_or_write_only_reply(command_name: str) -> UpdatePlan:
-    return UpdatePlan(reply=f"Only the PR author and people with write access can use `{command_name}`.")
+def _author_or_triage_only_reply(command_name: str) -> UpdatePlan:
+    return UpdatePlan(reply=f"Only the PR author and people with triage access or higher can use `{command_name}`.")
 
 
 def accept_review(pull_request: PullRequest, comment: Comment, argument: str, today: datetime.date) -> UpdatePlan:
@@ -99,27 +106,27 @@ def accept_review(pull_request: PullRequest, comment: Comment, argument: str, to
         review_date = datetime.date.fromisoformat(argument)
     except ValueError:
         review_date = None
-    if not comment.has_write_access:
+    if comment.user.repo_role not in ROLES_WITH_WRITE_ACCESS:
         return UpdatePlan(reply="Only people with write access can accept a review.")
-    elif comment.user_name == pull_request.author:
+    elif comment.user.user_name == pull_request.author:
         return UpdatePlan(reply="You can't accept the review of your own PR.")
     elif review_date is None:
         return _usage_reply("/accept-review")
     elif review_date < today:
         return UpdatePlan(reply=f"The review date has to be today or later. Use {COMMAND_USAGES['/accept-review']}.")
-    elif pull_request.assignees == (comment.user_name,):
+    elif pull_request.assignees == (comment.user.user_name,):
         return UpdatePlan(react=True)
     elif len(pull_request.assignees) > 0:
         return UpdatePlan(reply=_review_taken_reply(pull_request.assignees))
     else:
-        return UpdatePlan(assignees_to_add=(comment.user_name,), react=True)
+        return UpdatePlan(assignees_to_add=(comment.user.user_name,), react=True)
 
 
 def release_review(pull_request: PullRequest, comment: Comment, argument: str) -> UpdatePlan:
     if argument != "":
         return _usage_reply("/release-review")
-    elif comment.user_name in pull_request.assignees:
-        return UpdatePlan(assignees_to_remove=(comment.user_name,), react=True)
+    elif comment.user.user_name in pull_request.assignees:
+        return UpdatePlan(assignees_to_remove=(comment.user.user_name,), react=True)
     elif len(pull_request.assignees) > 0:
         return UpdatePlan(reply=f"{_mention_list(pull_request.assignees)} accepted this review, so only they can release it.")
     else:
@@ -187,13 +194,16 @@ def handle_comment(
     if parsed_command is None:
         return None
     command_name, argument = parsed_command
-    commenter_is_author_or_writer = (comment.user_name == pull_request.author) or comment.has_write_access
+    commenter_is_author_or_triager = (
+        (comment.user.user_name == pull_request.author)
+        or (comment.user.repo_role in ROLES_WITH_TRIAGE_ACCESS)
+    )
     if command_name == "/accept-review":
         return accept_review(pull_request, comment, argument, today)
     elif command_name == "/release-review":
         return release_review(pull_request, comment, argument)
-    elif not commenter_is_author_or_writer:
-        return _author_or_write_only_reply(command_name)
+    elif not commenter_is_author_or_triager:
+        return _author_or_triage_only_reply(command_name)
     elif command_name == "/set-priority":
         return set_priority(pull_request, argument)
     elif command_name == "/set-milestone":

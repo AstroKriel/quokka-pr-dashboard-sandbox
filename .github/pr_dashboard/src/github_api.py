@@ -4,8 +4,6 @@ import urllib.parse
 
 import commands
 
-WRITE_ROLES = ("admin", "maintain", "write")
-
 
 def _gh_api(endpoint: str, method: str = "GET", fields: dict | None = None, paginate: bool = False):
     cmd_parts = ["gh", "api", "--method", method, endpoint]
@@ -42,12 +40,12 @@ def get_pull_request(repo: str, pr_number: int) -> commands.PullRequest:
     )
 
 
-def user_has_write_access(repo: str, user_name: str) -> bool:
+def get_user(repo: str, user_name: str) -> commands.User:
     try:
         permission_data = _gh_api(f"repos/{repo}/collaborators/{_quote(user_name)}/permission")
     except subprocess.CalledProcessError:
-        return False
-    return permission_data["role_name"] in WRITE_ROLES
+        return commands.User(user_name=user_name, repo_role="none")
+    return commands.User(user_name=user_name, repo_role=permission_data["role_name"])
 
 
 def list_open_milestones(repo: str) -> tuple[commands.Milestone, ...]:
