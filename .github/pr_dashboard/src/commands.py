@@ -51,7 +51,7 @@ class PullRequest:
     pr_number: int
     author: str
     assignees: tuple[str, ...]
-    labels: tuple[str, ...]
+    label_names: tuple[str, ...]
     num_lines_changed: int
     file_paths: tuple[str, ...]
 
@@ -76,8 +76,8 @@ class MilestoneChange:
 
 @dataclasses.dataclass(frozen=True)
 class UpdatePlan:
-    labels_to_add: tuple[str, ...] = ()
-    labels_to_remove: tuple[str, ...] = ()
+    label_names_to_add: tuple[str, ...] = ()
+    label_names_to_remove: tuple[str, ...] = ()
     assignees_to_add: tuple[str, ...] = ()
     assignees_to_remove: tuple[str, ...] = ()
     milestone_change: MilestoneChange | None = None
@@ -198,18 +198,18 @@ def set_priority(
         priority = Priority(argument.lower())
     except ValueError:
         return _usage_reply("/set-priority")
-    wanted_label = f"{labels.PRIORITY_PREFIX}{priority}"
-    labels_to_remove = tuple(
-        _label for _label in pull_request.labels
-        if (_label.startswith(labels.PRIORITY_PREFIX)) and (_label != wanted_label)
+    wanted_label_name = f"{labels.PRIORITY_PREFIX}{priority}"
+    label_names_to_remove = tuple(
+        _label_name for _label_name in pull_request.label_names
+        if (_label_name.startswith(labels.PRIORITY_PREFIX)) and (_label_name != wanted_label_name)
     )
-    if wanted_label in pull_request.labels:
-        labels_to_add = ()
+    if wanted_label_name in pull_request.label_names:
+        label_names_to_add = ()
     else:
-        labels_to_add = (wanted_label, )
+        label_names_to_add = (wanted_label_name, )
     return UpdatePlan(
-        labels_to_add=labels_to_add,
-        labels_to_remove=labels_to_remove,
+        label_names_to_add=label_names_to_add,
+        label_names_to_remove=label_names_to_remove,
         react=True,
     )
 
@@ -246,27 +246,27 @@ def set_milestone(
 
 
 def recompute_labels(
-    label_config: labels.LabelConfig,
+    configured_labels: labels.ConfiguredLabels,
     pull_request: PullRequest,
     argument: str,
 ) -> UpdatePlan:
     if argument != "":
         return _usage_reply("/recompute-labels")
     label_changes = labels.compute_label_changes(
-        label_config=label_config,
-        current_labels=pull_request.labels,
+        configured_labels=configured_labels,
+        current_label_names=pull_request.label_names,
         file_paths=pull_request.file_paths,
         num_lines_changed=pull_request.num_lines_changed,
     )
     return UpdatePlan(
-        labels_to_add=label_changes.labels_to_add,
-        labels_to_remove=label_changes.labels_to_remove,
+        label_names_to_add=label_changes.label_names_to_add,
+        label_names_to_remove=label_changes.label_names_to_remove,
         react=True,
     )
 
 
 def handle_comment(
-    label_config: labels.LabelConfig,
+    configured_labels: labels.ConfiguredLabels,
     pull_request: PullRequest,
     comment: Comment,
     open_milestones: tuple[Milestone, ...],
@@ -291,4 +291,4 @@ def handle_comment(
     elif command_name == "/set-milestone":
         return set_milestone(open_milestones, argument)
     else:
-        return recompute_labels(label_config, pull_request, argument)
+        return recompute_labels(configured_labels, pull_request, argument)

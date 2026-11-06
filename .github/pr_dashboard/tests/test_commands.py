@@ -5,7 +5,7 @@ import unittest
 import commands
 import labels
 
-LABEL_CONFIG = labels.load_label_config(pathlib.Path(__file__).parents[1] / "labels.toml")
+CONFIGURED_LABELS = labels.load_configured_labels(pathlib.Path(__file__).parents[1] / "labels.toml")
 TODAY = datetime.date(2026, 11, 5)
 OPEN_MILESTONES = (
     commands.Milestone(
@@ -21,7 +21,7 @@ OPEN_MILESTONES = (
 
 def make_pull_request(
     assignees: tuple[str, ...] = (),
-    pr_labels: tuple[str, ...] = (),
+    label_names: tuple[str, ...] = (),
     file_paths: tuple[str, ...] = ("src/hydro/hydro_system.cpp", ),
     num_lines_changed: int = 12,
 ) -> commands.PullRequest:
@@ -29,7 +29,7 @@ def make_pull_request(
         pr_number=1,
         author="pr-author",
         assignees=assignees,
-        labels=pr_labels,
+        label_names=label_names,
         num_lines_changed=num_lines_changed,
         file_paths=file_paths,
     )
@@ -55,7 +55,7 @@ def run_comment(
     pull_request: commands.PullRequest,
     comment: commands.Comment,
 ) -> commands.UpdatePlan | None:
-    return commands.handle_comment(LABEL_CONFIG, pull_request, comment, OPEN_MILESTONES, TODAY)
+    return commands.handle_comment(CONFIGURED_LABELS, pull_request, comment, OPEN_MILESTONES, TODAY)
 
 
 class TestParseCommand(unittest.TestCase):
@@ -235,11 +235,11 @@ class TestSetPriority(unittest.TestCase):
     def test_replaces_existing_priority(
         self,
     ):
-        pull_request = make_pull_request(pr_labels=("priority/medium", "scope/hydro"))
+        pull_request = make_pull_request(label_names=("priority/medium", "scope/hydro"))
         update_plan = run_comment(pull_request, make_comment("/set-priority High"))
         expected_update_plan = commands.UpdatePlan(
-            labels_to_add=("priority/high", ),
-            labels_to_remove=("priority/medium", ),
+            label_names_to_add=("priority/high", ),
+            label_names_to_remove=("priority/medium", ),
             react=True,
         )
         self.assertEqual(update_plan, expected_update_plan)
@@ -247,7 +247,7 @@ class TestSetPriority(unittest.TestCase):
     def test_same_priority_changes_nothing(
         self,
     ):
-        pull_request = make_pull_request(pr_labels=("priority/low", ))
+        pull_request = make_pull_request(label_names=("priority/low", ))
         update_plan = run_comment(pull_request, make_comment("/set-priority low"))
         self.assertEqual(update_plan, commands.UpdatePlan(react=True))
 
@@ -266,7 +266,7 @@ class TestSetPriority(unittest.TestCase):
             role_in_repo=commands.RoleInRepo.READ,
         )
         update_plan = run_comment(make_pull_request(), comment)
-        self.assertEqual(update_plan.labels_to_add, ("priority/high", ))
+        self.assertEqual(update_plan.label_names_to_add, ("priority/high", ))
 
     def test_triager_can_set(
         self,
@@ -277,7 +277,7 @@ class TestSetPriority(unittest.TestCase):
             role_in_repo=commands.RoleInRepo.TRIAGE,
         )
         update_plan = run_comment(make_pull_request(), comment)
-        self.assertEqual(update_plan.labels_to_add, ("priority/high", ))
+        self.assertEqual(update_plan.label_names_to_add, ("priority/high", ))
 
     def test_outsider_is_refused(
         self,
@@ -331,7 +331,7 @@ class TestSetMilestone(unittest.TestCase):
         self,
     ):
         comment = make_comment("/set-milestone photochem")
-        update_plan = commands.handle_comment(LABEL_CONFIG, make_pull_request(), comment, (), TODAY)
+        update_plan = commands.handle_comment(CONFIGURED_LABELS, make_pull_request(), comment, (), TODAY)
         expected_reply = 'No open milestone is called "photochem", and there are no open milestones.'
         self.assertEqual(update_plan, commands.UpdatePlan(reply=expected_reply))
 
@@ -348,13 +348,13 @@ class TestRecomputeLabels(unittest.TestCase):
         self,
     ):
         pull_request = make_pull_request(
-            pr_labels=("scope/IO", "priority/high"),
+            label_names=("scope/IO", "priority/high"),
             num_lines_changed=250,
         )
         update_plan = run_comment(pull_request, make_comment("/recompute-labels"))
         expected_update_plan = commands.UpdatePlan(
-            labels_to_add=("scope/hydro", "size/L"),
-            labels_to_remove=("scope/IO", ),
+            label_names_to_add=("scope/hydro", "size/L"),
+            label_names_to_remove=("scope/IO", ),
             react=True,
         )
         self.assertEqual(update_plan, expected_update_plan)

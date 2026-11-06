@@ -9,7 +9,7 @@ import commands
 import github_api
 import labels
 
-LABEL_CONFIG_PATH = pathlib.Path(__file__).parents[1] / "labels.toml"
+LABELS_TOML_PATH = pathlib.Path(__file__).parents[1] / "labels.toml"
 
 
 def _print_update_plan(
@@ -28,9 +28,9 @@ def label_pr(
     pr_number: int,
     dry_run: bool,
 ) -> None:
-    label_config = labels.load_label_config(LABEL_CONFIG_PATH)
+    configured_labels = labels.load_configured_labels(LABELS_TOML_PATH)
     pull_request = github_api.get_pull_request(repo, pr_number)
-    update_plan = commands.recompute_labels(label_config, pull_request, argument="")
+    update_plan = commands.recompute_labels(configured_labels, pull_request, argument="")
     unreacted_update_plan = dataclasses.replace(update_plan, react=False)
     _print_update_plan(unreacted_update_plan)
     if not dry_run:
@@ -60,11 +60,11 @@ def handle_comment(
         user=user,
         text=comment_text,
     )
-    label_config = labels.load_label_config(LABEL_CONFIG_PATH)
+    configured_labels = labels.load_configured_labels(LABELS_TOML_PATH)
     pull_request = github_api.get_pull_request(repo, pr_number)
     open_milestones = github_api.list_open_milestones(repo)
     today = datetime.datetime.now(datetime.timezone.utc).date()
-    update_plan = commands.handle_comment(label_config, pull_request, comment, open_milestones, today)
+    update_plan = commands.handle_comment(configured_labels, pull_request, comment, open_milestones, today)
     _print_update_plan(update_plan)
     github_api.apply_update_plan(
         repo,
@@ -75,14 +75,14 @@ def handle_comment(
 
 
 def _label_sync_step(
-    label_definition: labels.LabelDefinition,
+    label: labels.Label,
     repo_labels: dict[str, dict],
 ) -> str | None:
-    existing_label = repo_labels.get(label_definition.name)
-    if existing_label is None:
+    existing_label_data = repo_labels.get(label.name)
+    if existing_label_data is None:
         return "create"
-    elif ((existing_label["color"].lower() == label_definition.color.lower())
-          and (existing_label["description"] == label_definition.description)):
+    elif ((existing_label_data["color"].lower() == label.color.lower())
+          and (existing_label_data["description"] == label.description)):
         return None
     else:
         return "update"
@@ -92,28 +92,28 @@ def sync_label_set(
     repo: str,
     dry_run: bool,
 ) -> None:
-    label_config = labels.load_label_config(LABEL_CONFIG_PATH)
+    configured_labels = labels.load_configured_labels(LABELS_TOML_PATH)
     repo_labels = github_api.list_repo_labels(repo)
-    for label_definition in label_config.all_label_definitions():
-        sync_action = _label_sync_step(label_definition, repo_labels)
+    for label in configured_labels.all_labels():
+        sync_action = _label_sync_step(label, repo_labels)
         if sync_action is None:
             continue
-        print(f"{sync_action} {label_definition.name}")
+        print(f"{sync_action} {label.name}")
         if dry_run:
             continue
         elif sync_action == "create":
             github_api.create_label(
                 repo,
-                label_definition.name,
-                label_definition.color,
-                label_definition.description,
+                label.name,
+                label.color,
+                label.description,
             )
         else:
             github_api.update_label(
                 repo,
-                label_definition.name,
-                label_definition.color,
-                label_definition.description,
+                label.name,
+                label.color,
+                label.description,
             )
 
 

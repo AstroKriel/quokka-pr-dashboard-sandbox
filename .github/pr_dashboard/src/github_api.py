@@ -50,7 +50,7 @@ def get_pull_request(
         pr_number=pr_number,
         author=pr_data["user"]["login"],
         assignees=tuple(_assignee["login"] for _assignee in pr_data["assignees"]),
-        labels=tuple(_label["name"] for _label in pr_data["labels"]),
+        label_names=tuple(_label_data["name"] for _label_data in pr_data["labels"]),
         num_lines_changed=pr_data["additions"] + pr_data["deletions"],
         file_paths=file_paths,
     )
@@ -125,13 +125,13 @@ def apply_update_plan(
     update_plan: commands.UpdatePlan,
 ) -> None:
     issue_endpoint = f"repos/{repo}/issues/{pr_number}"
-    for label in update_plan.labels_to_remove:
-        _gh_api(f"{issue_endpoint}/labels/{_quote(label)}", method="DELETE")
-    if len(update_plan.labels_to_add) > 0:
+    for label_name in update_plan.label_names_to_remove:
+        _gh_api(f"{issue_endpoint}/labels/{_quote(label_name)}", method="DELETE")
+    if len(update_plan.label_names_to_add) > 0:
         _gh_api(
             f"{issue_endpoint}/labels",
             method="POST",
-            fields={"labels": list(update_plan.labels_to_add)},
+            fields={"labels": list(update_plan.label_names_to_add)},
         )
     if len(update_plan.assignees_to_remove) > 0:
         assignee_fields = {"assignees": list(update_plan.assignees_to_remove)}

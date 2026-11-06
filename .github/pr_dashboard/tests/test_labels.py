@@ -5,7 +5,7 @@ import unittest
 
 import labels
 
-LABEL_CONFIG = labels.load_label_config(pathlib.Path(__file__).parents[1] / "labels.toml")
+CONFIGURED_LABELS = labels.load_configured_labels(pathlib.Path(__file__).parents[1] / "labels.toml")
 
 
 class TestScopeLabels(unittest.TestCase):
@@ -13,14 +13,14 @@ class TestScopeLabels(unittest.TestCase):
     def test_hydro_file(
         self,
     ):
-        scope_labels = labels.compute_scope_labels(LABEL_CONFIG, ("src/hydro/HLLC.hpp", ))
-        self.assertEqual(scope_labels, {"scope/hydro"})
+        scope_label_names = labels.compute_scope_label_names(CONFIGURED_LABELS, ("src/hydro/HLLC.hpp", ))
+        self.assertEqual(scope_label_names, {"scope/hydro"})
 
     def test_mhd_file_inside_hydro_gets_both(
         self,
     ):
-        scope_labels = labels.compute_scope_labels(LABEL_CONFIG, ("src/hydro/HLLD.hpp", ))
-        self.assertEqual(scope_labels, {"scope/hydro", "scope/MHD"})
+        scope_label_names = labels.compute_scope_label_names(CONFIGURED_LABELS, ("src/hydro/HLLD.hpp", ))
+        self.assertEqual(scope_label_names, {"scope/hydro", "scope/MHD"})
 
     def test_problem_directories(
         self,
@@ -30,54 +30,60 @@ class TestScopeLabels(unittest.TestCase):
             "src/problems/RadDust/test_rad_dust.cpp",
             "src/problems/ParticleSink/test_particle_sink.cpp",
         )
-        scope_labels = labels.compute_scope_labels(LABEL_CONFIG, file_paths)
-        self.assertEqual(scope_labels, {"scope/MHD", "scope/radiation", "scope/dust", "scope/particles"})
+        scope_label_names = labels.compute_scope_label_names(CONFIGURED_LABELS, file_paths)
+        self.assertEqual(scope_label_names, {"scope/MHD", "scope/radiation", "scope/dust", "scope/particles"})
 
     def test_inputs_follow_their_problem(
         self,
     ):
         file_paths = ("inputs/MHDBlast.toml", "inputs/alfven_wave_linear_regression.toml")
-        scope_labels = labels.compute_scope_labels(LABEL_CONFIG, file_paths)
-        self.assertEqual(scope_labels, {"scope/MHD"})
+        scope_label_names = labels.compute_scope_label_names(CONFIGURED_LABELS, file_paths)
+        self.assertEqual(scope_label_names, {"scope/MHD"})
 
     def test_unclaimed_problem_falls_back_to_tests(
         self,
     ):
         file_paths = ("src/problems/SN/testSN.cpp", "inputs/SN.toml", "extern/Toro/e1rpex.ini")
-        scope_labels = labels.compute_scope_labels(LABEL_CONFIG, file_paths)
-        self.assertEqual(scope_labels, {"scope/tests"})
+        scope_label_names = labels.compute_scope_label_names(CONFIGURED_LABELS, file_paths)
+        self.assertEqual(scope_label_names, {"scope/tests"})
 
     def test_claimed_problem_does_not_also_get_tests(
         self,
     ):
-        scope_labels = labels.compute_scope_labels(LABEL_CONFIG, ("src/problems/RadTube/testRadTube.cpp", ))
-        self.assertEqual(scope_labels, {"scope/radiation"})
+        scope_label_names = labels.compute_scope_label_names(
+            CONFIGURED_LABELS, ("src/problems/RadTube/testRadTube.cpp", )
+        )
+        self.assertEqual(scope_label_names, {"scope/radiation"})
 
     def test_build_files_and_libraries(
         self,
     ):
         file_paths = ("src/CMakeLists.txt", "src/problems/ProblemHelpers.cmake", "extern/amrex")
-        scope_labels = labels.compute_scope_labels(LABEL_CONFIG, file_paths)
-        self.assertEqual(scope_labels, {"scope/build"})
+        scope_label_names = labels.compute_scope_label_names(CONFIGURED_LABELS, file_paths)
+        self.assertEqual(scope_label_names, {"scope/build"})
 
     def test_problem_registry_is_tests(
         self,
     ):
-        scope_labels = labels.compute_scope_labels(LABEL_CONFIG, ("src/problems/CMakeLists.txt", ))
-        self.assertEqual(scope_labels, {"scope/tests"})
+        scope_label_names = labels.compute_scope_label_names(
+            CONFIGURED_LABELS, ("src/problems/CMakeLists.txt", )
+        )
+        self.assertEqual(scope_label_names, {"scope/tests"})
 
     def test_scripts_are_tools(
         self,
     ):
-        scope_labels = labels.compute_scope_labels(LABEL_CONFIG, ("scripts/python/prune_checkpoints.py", ))
-        self.assertEqual(scope_labels, {"scope/tools"})
+        scope_label_names = labels.compute_scope_label_names(
+            CONFIGURED_LABELS, ("scripts/python/prune_checkpoints.py", )
+        )
+        self.assertEqual(scope_label_names, {"scope/tools"})
 
     def test_ci_and_documentation(
         self,
     ):
         file_paths = (".github/workflows/cmake.yml", "docs/index.md", "README.md")
-        scope_labels = labels.compute_scope_labels(LABEL_CONFIG, file_paths)
-        self.assertEqual(scope_labels, {"scope/CI", "scope/documentation"})
+        scope_label_names = labels.compute_scope_label_names(CONFIGURED_LABELS, file_paths)
+        self.assertEqual(scope_label_names, {"scope/CI", "scope/documentation"})
 
     def test_every_repository_file_has_a_scope(
         self,
@@ -93,8 +99,8 @@ class TestScopeLabels(unittest.TestCase):
         file_paths = completed_process.stdout.splitlines()
         unscoped_paths = [
             _file_path for _file_path in file_paths if len(
-                labels.compute_scope_labels(
-                    LABEL_CONFIG,
+                labels.compute_scope_label_names(
+                    CONFIGURED_LABELS,
                     (_file_path, ),
                 ),
             ) == 0
@@ -102,15 +108,15 @@ class TestScopeLabels(unittest.TestCase):
         self.assertEqual(unscoped_paths, [], "Add these paths to a scope in labels.toml")
 
 
-class TestLoadLabelConfig(unittest.TestCase):
+class TestLoadConfiguredLabels(unittest.TestCase):
 
     def test_kinds_are_split(
         self,
     ):
-        self.assertEqual(len(LABEL_CONFIG.scope_labels), 15)
-        self.assertEqual(len(LABEL_CONFIG.size_labels), 5)
-        self.assertEqual(len(LABEL_CONFIG.priority_labels), 3)
-        self.assertEqual(len(LABEL_CONFIG.all_label_definitions()), 23)
+        self.assertEqual(len(CONFIGURED_LABELS.scope_labels), 15)
+        self.assertEqual(len(CONFIGURED_LABELS.size_labels), 5)
+        self.assertEqual(len(CONFIGURED_LABELS.priority_labels), 3)
+        self.assertEqual(len(CONFIGURED_LABELS.all_labels()), 23)
 
     def test_scope_label_without_paths_fails(
         self,
@@ -126,7 +132,7 @@ class TestLoadLabelConfig(unittest.TestCase):
             config_path = pathlib.Path(temp_dir) / "labels.toml"
             config_path.write_text(config_text)
             with self.assertRaises(KeyError):
-                labels.load_label_config(config_path)
+                labels.load_configured_labels(config_path)
 
 
 class TestSizeLabel(unittest.TestCase):
@@ -148,7 +154,9 @@ class TestSizeLabel(unittest.TestCase):
         }
         for num_lines_changed, expected_size in expected_sizes.items():
             with self.subTest(num_lines_changed=num_lines_changed):
-                self.assertEqual(labels.compute_size_label(LABEL_CONFIG, num_lines_changed), expected_size)
+                self.assertEqual(
+                    labels.compute_size_label_name(CONFIGURED_LABELS, num_lines_changed), expected_size
+                )
 
 
 class TestLabelChanges(unittest.TestCase):
@@ -156,35 +164,35 @@ class TestLabelChanges(unittest.TestCase):
     def test_new_pr_gets_scope_size_and_default_priority(
         self,
     ):
-        label_changes = labels.compute_label_changes(LABEL_CONFIG, (), ("src/io/plotfile.cpp", ), 40)
-        self.assertEqual(label_changes.labels_to_add, ("priority/medium", "scope/IO", "size/M"))
-        self.assertEqual(label_changes.labels_to_remove, ())
+        label_changes = labels.compute_label_changes(CONFIGURED_LABELS, (), ("src/io/plotfile.cpp", ), 40)
+        self.assertEqual(label_changes.label_names_to_add, ("priority/medium", "scope/IO", "size/M"))
+        self.assertEqual(label_changes.label_names_to_remove, ())
 
     def test_stale_scope_and_size_are_replaced_and_others_kept(
         self,
     ):
-        current_labels = ("scope/radiation", "size/XS", "priority/high", "code-audit")
+        current_label_names = ("scope/radiation", "size/XS", "priority/high", "code-audit")
         label_changes = labels.compute_label_changes(
-            LABEL_CONFIG,
-            current_labels,
+            CONFIGURED_LABELS,
+            current_label_names,
             ("src/io/plotfile.cpp", ),
             40,
         )
-        self.assertEqual(label_changes.labels_to_add, ("scope/IO", "size/M"))
-        self.assertEqual(label_changes.labels_to_remove, ("scope/radiation", "size/XS"))
+        self.assertEqual(label_changes.label_names_to_add, ("scope/IO", "size/M"))
+        self.assertEqual(label_changes.label_names_to_remove, ("scope/radiation", "size/XS"))
 
     def test_up_to_date_pr_needs_no_changes(
         self,
     ):
-        current_labels = ("scope/IO", "size/M", "priority/low")
+        current_label_names = ("scope/IO", "size/M", "priority/low")
         label_changes = labels.compute_label_changes(
-            LABEL_CONFIG,
-            current_labels,
+            CONFIGURED_LABELS,
+            current_label_names,
             ("src/io/plotfile.cpp", ),
             40,
         )
-        self.assertEqual(label_changes.labels_to_add, ())
-        self.assertEqual(label_changes.labels_to_remove, ())
+        self.assertEqual(label_changes.label_names_to_add, ())
+        self.assertEqual(label_changes.label_names_to_remove, ())
 
 
 if __name__ == "__main__":
