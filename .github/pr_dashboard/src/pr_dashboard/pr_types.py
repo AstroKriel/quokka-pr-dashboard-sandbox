@@ -2,12 +2,6 @@ import dataclasses
 import enum
 
 
-class Priority(enum.StrEnum):
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-
-
 class RoleInRepo(enum.StrEnum):
     READ = "read"
     TRIAGE = "triage"

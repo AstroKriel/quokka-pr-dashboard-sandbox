@@ -148,7 +148,7 @@ class TestHandleCommands_AcceptReview(unittest.TestCase):
             pull_request=pull_request,
         )
         self.assertTrue(
-            update_plan.reply.startswith("@reviewer-a and @reviewer-b have accepted this review.")
+            update_plan.reply.startswith("@reviewer-a and @reviewer-b have accepted this review."),
         )
 
     def test_missing_date(

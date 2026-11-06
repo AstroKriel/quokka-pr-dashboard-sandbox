@@ -9,16 +9,34 @@ CONFIGURED_LABELS = load_labels.load_configured_labels(pathlib.Path(__file__).pa
 SCOPE_LABEL_TEXT = (
     '[[scope_label]]\nname = "scope/hydro"\ncolor = "4ADD08"\ndescription = "Hydro"\npaths = ["src/hydro/*"]\n'
 )
-LOW_PRIORITY_LABEL_TEXT = '[[priority_label]]\nname = "priority/low"\ncolor = "0E8A16"\ndescription = "Low"\n'
-DEFAULT_PRIORITY_LABEL_TEXT = (
-    '[[priority_label]]\nname = "priority/medium"\ncolor = "FBCA04"\ndescription = "Normal"\ndefault = true\n'
+
+
+def make_priority_label_text(
+    *,
+    label_name: str,
+    is_default: bool = False,
+) -> str:
+    if is_default:
+        default_line = "default = true\n"
+    else:
+        default_line = ""
+    return f'[[priority_label]]\nname = "{label_name}"\ncolor = "FBCA04"\ndescription = "Priority"\n{default_line}'
+
+
+LOW_PRIORITY_LABEL_TEXT = make_priority_label_text(label_name="priority/low")
+MEDIUM_PRIORITY_LABEL_TEXT = make_priority_label_text(label_name="priority/medium")
+DEFAULT_PRIORITY_LABEL_TEXT = make_priority_label_text(
+    label_name="priority/medium",
+    is_default=True,
 )
+HIGH_PRIORITY_LABEL_TEXT = make_priority_label_text(label_name="priority/high")
+VALID_PRIORITY_LABELS_TEXT = LOW_PRIORITY_LABEL_TEXT + DEFAULT_PRIORITY_LABEL_TEXT + HIGH_PRIORITY_LABEL_TEXT
 
 
 def make_config_text(
     *,
-    scope_label_text: str,
-    priority_label_text: str,
+    scope_label_text: str = SCOPE_LABEL_TEXT,
+    priority_label_text: str = VALID_PRIORITY_LABELS_TEXT,
 ) -> str:
     return (
         '[not_mapped_label]\nname = "scope/not_mapped"\ncolor = "B60205"\ndescription = "Not mapped"\n'
@@ -57,14 +75,18 @@ class TestLoadLabels_Kinds(unittest.TestCase):
         self.assertEqual(CONFIGURED_LABELS.default_priority_label.name, "priority/medium")
         self.assertTrue(CONFIGURED_LABELS.default_priority_label.is_default)
 
+    def test_each_priority_has_its_label(
+        self,
+    ):
+        for priority in label_types.Priority:
+            with self.subTest(priority=priority):
+                priority_label = CONFIGURED_LABELS.get_priority_label(priority)
+                self.assertEqual(priority_label.name, f"priority/{priority}")
+
     def test_minimal_config_loads(
         self,
     ):
-        config_text = make_config_text(
-            scope_label_text=SCOPE_LABEL_TEXT,
-            priority_label_text=LOW_PRIORITY_LABEL_TEXT + DEFAULT_PRIORITY_LABEL_TEXT,
-        )
-        configured_labels = load_config_text(config_text)
+        configured_labels = load_config_text(make_config_text())
         self.assertEqual(configured_labels.default_priority_label.name, "priority/medium")
         self.assertFalse(configured_labels.priority_labels[0].is_default)
 
@@ -77,17 +99,45 @@ class TestLoadLabels_Errors(unittest.TestCase):
         config_text = make_config_text(
             scope_label_text=
             '[[scope_label]]\nname = "scope/hydro"\ncolor = "4ADD08"\ndescription = "Hydro"\n',
-            priority_label_text=DEFAULT_PRIORITY_LABEL_TEXT,
         )
         with self.assertRaises(KeyError):
+            load_config_text(config_text)
+
+    def test_label_with_the_wrong_prefix_fails(
+        self,
+    ):
+        config_text = make_config_text(
+            scope_label_text=SCOPE_LABEL_TEXT.replace(
+                'name = "scope/hydro"',
+                'name = "size/hydro"',
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "must start with `scope/`"):
+            load_config_text(config_text)
+
+    def test_priority_label_that_is_not_a_level_fails(
+        self,
+    ):
+        urgent_label_text = make_priority_label_text(label_name="priority/urgent")
+        config_text = make_config_text(priority_label_text=VALID_PRIORITY_LABELS_TEXT + urgent_label_text)
+        with self.assertRaisesRegex(ValueError, "`priority/urgent` must end in one of"):
+            load_config_text(config_text)
+
+    def test_missing_priority_level_fails(
+        self,
+    ):
+        config_text = make_config_text(
+            priority_label_text=LOW_PRIORITY_LABEL_TEXT + DEFAULT_PRIORITY_LABEL_TEXT
+        )
+        with self.assertRaisesRegex(ValueError, "must cover each of"):
             load_config_text(config_text)
 
     def test_no_default_priority_fails(
         self,
     ):
         config_text = make_config_text(
-            scope_label_text=SCOPE_LABEL_TEXT,
-            priority_label_text=LOW_PRIORITY_LABEL_TEXT,
+            priority_label_text=LOW_PRIORITY_LABEL_TEXT + MEDIUM_PRIORITY_LABEL_TEXT +
+            HIGH_PRIORITY_LABEL_TEXT,
         )
         with self.assertRaisesRegex(ValueError, "got 0"):
             load_config_text(config_text)
@@ -95,10 +145,13 @@ class TestLoadLabels_Errors(unittest.TestCase):
     def test_two_default_priorities_fail(
         self,
     ):
-        second_default_text = DEFAULT_PRIORITY_LABEL_TEXT.replace("priority/medium", "priority/high")
+        default_high_label_text = make_priority_label_text(
+            label_name="priority/high",
+            is_default=True,
+        )
         config_text = make_config_text(
-            scope_label_text=SCOPE_LABEL_TEXT,
-            priority_label_text=DEFAULT_PRIORITY_LABEL_TEXT + second_default_text,
+            priority_label_text=LOW_PRIORITY_LABEL_TEXT + DEFAULT_PRIORITY_LABEL_TEXT +
+            default_high_label_text,
         )
         with self.assertRaisesRegex(ValueError, "got 2"):
             load_config_text(config_text)

@@ -66,15 +66,16 @@ def compute_label_changes(
     )
     wanted_label_names.add(size_label_name)
     priority_is_set = any(
-        _label_name.startswith(label_types.PRIORITY_PREFIX) for _label_name in current_label_names
+        label_types.PriorityLabel.check_name_has_prefix(_label_name) for _label_name in current_label_names
     )
     if not priority_is_set:
         wanted_label_names.add(configured_labels.default_priority_label.name)
     label_names_to_add = sorted(wanted_label_names - set(current_label_names))
     label_names_to_remove = sorted(
-        _label_name for _label_name in current_label_names if
-        (_label_name.startswith(label_types.SCOPE_PREFIX) or _label_name.startswith(label_types.SIZE_PREFIX))
-        and (_label_name not in wanted_label_names)
+        _label_name for _label_name in current_label_names if (
+            label_types.ScopeLabel.check_name_has_prefix(_label_name)
+            or label_types.SizeLabel.check_name_has_prefix(_label_name)
+        ) and (_label_name not in wanted_label_names)
     )
     return label_types.LabelChanges(
         label_names_to_add=tuple(label_names_to_add),

@@ -15,7 +15,7 @@ _ROLES_WITH_WRITE_ACCESS = (
     pr_types.RoleInRepo.MAINTAIN,
     pr_types.RoleInRepo.ADMIN,
 )
-_PRIORITY_CHOICES = "|".join(pr_types.Priority)
+_PRIORITY_CHOICES = "|".join(label_types.Priority)
 COMMAND_USAGES = {
     "/accept-review": "`/accept-review <YYYY-MM-DD>`, with the date you will review by",
     "/release-review": "`/release-review`",
@@ -134,17 +134,18 @@ def _release_review(
 
 def _set_priority(
     *,
+    configured_labels: label_types.ConfiguredLabels,
     pull_request: pr_types.PullRequest,
     argument: str,
 ) -> pr_types.UpdatePlan:
     try:
-        priority = pr_types.Priority(argument.lower())
+        priority = label_types.Priority(argument.lower())
     except ValueError:
         return _usage_reply("/set-priority")
-    wanted_label_name = f"{label_types.PRIORITY_PREFIX}{priority}"
+    wanted_label_name = configured_labels.get_priority_label(priority).name
     label_names_to_remove = tuple(
-        _label_name for _label_name in pull_request.label_names
-        if (_label_name.startswith(label_types.PRIORITY_PREFIX)) and (_label_name != wanted_label_name)
+        _label_name for _label_name in pull_request.label_names if
+        label_types.PriorityLabel.check_name_has_prefix(_label_name) and (_label_name != wanted_label_name)
     )
     if wanted_label_name in pull_request.label_names:
         label_names_to_add = ()
@@ -243,6 +244,7 @@ def handle_comment(
         return _author_or_triage_only_reply(command_name)
     elif command_name == "/set-priority":
         return _set_priority(
+            configured_labels=configured_labels,
             pull_request=pull_request,
             argument=argument,
         )
