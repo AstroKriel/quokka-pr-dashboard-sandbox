@@ -1,87 +1,91 @@
 import dataclasses
-import enum
-import typing
-
-
-class Priority(enum.StrEnum):
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
 
 
 @dataclasses.dataclass(frozen=True)
 class Label:
-    PREFIX: typing.ClassVar[str]
+    prefix: str
     name: str
     color: str
     description: str
 
-    def __post_init__(
+    @property
+    def full_name(
         self,
-    ) -> None:
-        if not self.check_name_has_prefix(self.name):
-            raise ValueError(f"label `name` must start with `{self.PREFIX}`; got `{self.name}`.")
-
-    @classmethod
-    def check_name_has_prefix(
-        cls,
-        label_name: str,
-    ) -> bool:
-        return label_name.startswith(cls.PREFIX)
+    ) -> str:
+        return self.prefix + self.name
 
 
 @dataclasses.dataclass(frozen=True)
 class ScopeLabel(Label):
-    PREFIX: typing.ClassVar[str] = "scope/"
     paths: tuple[str, ...]
 
 
 @dataclasses.dataclass(frozen=True)
 class NotMappedLabel(Label):
-    PREFIX: typing.ClassVar[str] = "scope/"
+    pass
 
 
 @dataclasses.dataclass(frozen=True)
 class SizeLabel(Label):
-    PREFIX: typing.ClassVar[str] = "size/"
     min_num_lines: int
 
 
 @dataclasses.dataclass(frozen=True)
 class PriorityLabel(Label):
-    PREFIX: typing.ClassVar[str] = "priority/"
     is_default: bool
 
-    @property
-    def priority(
+
+@dataclasses.dataclass(frozen=True)
+class LabelCategory:
+    prefix: str
+
+    def check_owns(
         self,
-    ) -> Priority:
-        return Priority(self.name.removeprefix(self.PREFIX))
+        full_label_name: str,
+    ) -> bool:
+        return full_label_name.startswith(self.prefix)
+
+
+@dataclasses.dataclass(frozen=True)
+class ScopeLabels(LabelCategory):
+    labels: tuple[ScopeLabel, ...]
+    not_mapped_label: NotMappedLabel
+
+
+@dataclasses.dataclass(frozen=True)
+class SizeLabels(LabelCategory):
+    labels: tuple[SizeLabel, ...]
+
+
+@dataclasses.dataclass(frozen=True)
+class PriorityLabels(LabelCategory):
+    labels: tuple[PriorityLabel, ...]
+    default_label: PriorityLabel
+
+    def get_label(
+        self,
+        label_name: str,
+    ) -> PriorityLabel | None:
+        matching_labels = [_label for _label in self.labels if _label.name.lower() == label_name.lower()]
+        if len(matching_labels) == 0:
+            return None
+        else:
+            return matching_labels[0]
 
 
 @dataclasses.dataclass(frozen=True)
 class ConfiguredLabels:
-    scope_labels: tuple[ScopeLabel, ...]
-    size_labels: tuple[SizeLabel, ...]
-    priority_labels: tuple[PriorityLabel, ...]
-    not_mapped_label: NotMappedLabel
-    default_priority_label: PriorityLabel
+    scope_labels: ScopeLabels
+    size_labels: SizeLabels
+    priority_labels: PriorityLabels
 
     def all_labels(
         self,
     ) -> tuple[Label, ...]:
-        return self.scope_labels + (self.not_mapped_label, ) + self.size_labels + self.priority_labels
-
-    def get_priority_label(
-        self,
-        priority: Priority,
-    ) -> PriorityLabel:
-        matching_priority_labels = [
-            _priority_label for _priority_label in self.priority_labels
-            if _priority_label.priority == priority
-        ]
-        assert len(matching_priority_labels) == 1
-        return matching_priority_labels[0]
+        return (
+            self.scope_labels.labels + (self.scope_labels.not_mapped_label, ) + self.size_labels.labels +
+            self.priority_labels.labels
+        )
 
 
 @dataclasses.dataclass(frozen=True)

@@ -19,15 +19,15 @@ def _compute_scope_label_names(
     scope_label_names = set()
     for file_path in edited_file_paths:
         matched_label_names = {
-            _scope_label.name
-            for _scope_label in configured_labels.scope_labels
+            _scope_label.full_name
+            for _scope_label in configured_labels.scope_labels.labels
             if _path_matches_any(
                 file_path=file_path,
                 patterns=_scope_label.paths,
             )
         }
         if len(matched_label_names) == 0:
-            scope_label_names.add(configured_labels.not_mapped_label.name)
+            scope_label_names.add(configured_labels.scope_labels.not_mapped_label.full_name)
         else:
             scope_label_names.update(matched_label_names)
     return scope_label_names
@@ -39,13 +39,13 @@ def _compute_size_label_name(
     num_lines_changed: int,
 ) -> str:
     sorted_size_labels = sorted(
-        configured_labels.size_labels,
+        configured_labels.size_labels.labels,
         key=lambda _size_label: _size_label.min_num_lines,
     )
-    size_label_name = sorted_size_labels[0].name
+    size_label_name = sorted_size_labels[0].full_name
     for size_label in sorted_size_labels:
         if num_lines_changed >= size_label.min_num_lines:
-            size_label_name = size_label.name
+            size_label_name = size_label.full_name
     return size_label_name
 
 
@@ -66,15 +66,15 @@ def compute_label_changes(
     )
     wanted_label_names.add(size_label_name)
     priority_is_set = any(
-        label_types.PriorityLabel.check_name_has_prefix(_label_name) for _label_name in current_label_names
+        configured_labels.priority_labels.check_owns(_label_name) for _label_name in current_label_names
     )
     if not priority_is_set:
-        wanted_label_names.add(configured_labels.default_priority_label.name)
+        wanted_label_names.add(configured_labels.priority_labels.default_label.full_name)
     label_names_to_add = sorted(wanted_label_names - set(current_label_names))
     label_names_to_remove = sorted(
         _label_name for _label_name in current_label_names if (
-            label_types.ScopeLabel.check_name_has_prefix(_label_name)
-            or label_types.SizeLabel.check_name_has_prefix(_label_name)
+            configured_labels.scope_labels.check_owns(_label_name)
+            or configured_labels.size_labels.check_owns(_label_name)
         ) and (_label_name not in wanted_label_names)
     )
     return label_types.LabelChanges(

@@ -1,4 +1,5 @@
 ## the labels used by the PR dashboard; labels not listed here are left alone
+## each category sets a prefix, and each label's full name is the prefix plus its name
 ## scope/ and size/ labels are set by the tool; edits by hand are replaced
 
 ##
@@ -8,19 +9,22 @@
 ## set from the changed files: a PR gets every scope with a matching path
 ## a pattern's `*` also matches `/`, so `src/hydro/*` covers every file below `src/hydro/`
 
+[scope]
+prefix = "scope/"
+
 ## --- unmapped files
 ## a changed file that matches no scope gives the PR this label, to show that its path
 ## needs adding to a scope below
-[not_mapped_label]
-name = "scope/not_mapped"
+[scope.not_mapped_label]
+name = "not_mapped"
 color = "B60205"
 description = "A changed file matches no scope in labels.toml"
 
 ## --- physics
 ## each module's src/ folder, its problems in src/problems/, and their files in inputs/
 
-[[scope_label]]
-name = "scope/hydro"
+[[scope.label]]
+name = "hydro"
 color = "4ADD08"
 description = "Hydrodynamics"
 paths = [
@@ -32,8 +36,8 @@ paths = [
     "inputs/Nscbc*",
 ]
 
-[[scope_label]]
-name = "scope/MHD"
+[[scope.label]]
+name = "MHD"
 color = "66735C"
 description = "Magnetohydrodynamics"
 paths = [
@@ -53,8 +57,8 @@ paths = [
     "inputs/alfven_wave*",
 ]
 
-[[scope_label]]
-name = "scope/radiation"
+[[scope.label]]
+name = "radiation"
 color = "CAD629"
 description = "Radiation transport"
 paths = [
@@ -65,8 +69,8 @@ paths = [
     "inputs/Stromgren*",
 ]
 
-[[scope_label]]
-name = "scope/particles"
+[[scope.label]]
+name = "particles"
 color = "277120"
 description = "Particles"
 paths = [
@@ -80,8 +84,8 @@ paths = [
     "inputs/GravRadParticle*",
 ]
 
-[[scope_label]]
-name = "scope/chemistry"
+[[scope.label]]
+name = "chemistry"
 color = "C5DEF5"
 description = "Chemistry and chemical networks"
 paths = [
@@ -94,14 +98,14 @@ paths = [
     "inputs/PopIII*",
 ]
 
-[[scope_label]]
-name = "scope/cooling"
+[[scope.label]]
+name = "cooling"
 color = "BFD4F2"
 description = "Radiative cooling"
 paths = ["src/cooling/*", "src/problems/ResampledCooling*", "inputs/ResampledCooling*"]
 
-[[scope_label]]
-name = "scope/dust"
+[[scope.label]]
+name = "dust"
 color = "D4C5F9"
 description = "Dust"
 paths = [
@@ -114,22 +118,22 @@ paths = [
     "inputs/RadMarshakDust*",
 ]
 
-[[scope_label]]
-name = "scope/conduction"
+[[scope.label]]
+name = "conduction"
 color = "F9D0C4"
 description = "Thermal conduction"
 paths = ["src/conduction/*", "src/problems/ThermalConduction*", "inputs/ThermalConduction*"]
 
 ## --- framework
 
-[[scope_label]]
-name = "scope/IO"
+[[scope.label]]
+name = "IO"
 color = "1D76DB"
 description = "Input and output"
 paths = ["src/io/*"]
 
-[[scope_label]]
-name = "scope/core"
+[[scope.label]]
+name = "core"
 color = "5319E7"
 description = "The shared driver, math and utilities"
 paths = [
@@ -149,8 +153,8 @@ paths = [
 
 ## --- build, tests and tooling
 
-[[scope_label]]
-name = "scope/build"
+[[scope.label]]
+name = "build"
 color = "C2E0C6"
 description = "The build system and third-party libraries"
 paths = [
@@ -165,20 +169,20 @@ paths = [
     "extern/openPMD-api*",
 ]
 
-[[scope_label]]
-name = "scope/tests"
+[[scope.label]]
+name = "tests"
 color = "FEF2C0"
 description = "Test problems, inputs, reference data and the regression suite"
 paths = ["src/problems/*", "inputs/*", "extern/*", "regression/*", "tests/*"]
 
-[[scope_label]]
-name = "scope/tools"
+[[scope.label]]
+name = "tools"
 color = "E99695"
 description = "Helper scripts and files for AI agents"
 paths = ["scripts/*", ".agents/*", ".claude/*", "AGENTS.md", "CLAUDE.md", "context7.json"]
 
-[[scope_label]]
-name = "scope/CI"
+[[scope.label]]
+name = "CI"
 color = "BFDADC"
 description = "Continuous integration and code checkers"
 paths = [
@@ -198,8 +202,8 @@ paths = [
 
 ## --- documentation
 
-[[scope_label]]
-name = "scope/documentation"
+[[scope.label]]
+name = "documentation"
 color = "0075CA"
 description = "Documentation"
 paths = ["docs/*", "*.md", "paper/*", "CITATION.cff", "LICENSE", ".mailmap"]
@@ -211,32 +215,35 @@ paths = ["docs/*", "*.md", "paper/*", "CITATION.cff", "LICENSE", ".mailmap"]
 ## set from the lines changed (additions plus deletions): a PR gets the largest
 ## `min_num_lines` it reaches
 
-[[size_label]]
-name = "size/XS"
+[size]
+prefix = "size/"
+
+[[size.label]]
+name = "XS"
 color = "00FF00"
 description = "This PR changes 0 to 9 lines"
 min_num_lines = 0
 
-[[size_label]]
-name = "size/S"
+[[size.label]]
+name = "S"
 color = "77B800"
 description = "This PR changes 10 to 29 lines"
 min_num_lines = 10
 
-[[size_label]]
-name = "size/M"
+[[size.label]]
+name = "M"
 color = "EBB800"
 description = "This PR changes 30 to 99 lines"
 min_num_lines = 30
 
-[[size_label]]
-name = "size/L"
+[[size.label]]
+name = "L"
 color = "EB9500"
 description = "This PR changes 100 to 499 lines"
 min_num_lines = 100
 
-[[size_label]]
-name = "size/XL"
+[[size.label]]
+name = "XL"
 color = "FF823F"
 description = "This PR changes 500 or more lines"
 min_num_lines = 500
@@ -245,21 +252,24 @@ min_num_lines = 500
 ## === PRIORITY LABELS
 ##
 
-## set by people with /set-priority; the one marked `default = true` is given to a PR that
-## has no priority label
+## set by people with /set-priority, using the name, e.g. `/set-priority high`
+## the one marked `default = true` is given to a PR that has no priority label
 
-[[priority_label]]
-name = "priority/low"
+[priority]
+prefix = "priority/"
+
+[[priority.label]]
+name = "low"
 color = "0E8A16"
 description = "Review when there is time"
 
-[[priority_label]]
-name = "priority/medium"
+[[priority.label]]
+name = "medium"
 color = "FBCA04"
 description = "Review at the normal pace"
 default = true
 
-[[priority_label]]
-name = "priority/high"
+[[priority.label]]
+name = "high"
 color = "D93F0B"
 description = "Review soon"

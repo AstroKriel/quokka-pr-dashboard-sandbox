@@ -15,11 +15,10 @@ _ROLES_WITH_WRITE_ACCESS = (
     pr_types.RoleInRepo.MAINTAIN,
     pr_types.RoleInRepo.ADMIN,
 )
-_PRIORITY_CHOICES = "|".join(label_types.Priority)
+COMMAND_NAMES = ("/accept-review", "/release-review", "/set-priority", "/set-milestone", "/recompute-labels")
 COMMAND_USAGES = {
     "/accept-review": "`/accept-review <YYYY-MM-DD>`, with the date you will review by",
     "/release-review": "`/release-review`",
-    "/set-priority": f"`/set-priority <{_PRIORITY_CHOICES}>`",
     "/set-milestone": "`/set-milestone <title|none>`",
     "/recompute-labels": "`/recompute-labels`",
 }
@@ -33,7 +32,7 @@ def parse_command(
         return None
     first_line_words = lines[0].split(maxsplit=1)
     command_name = first_line_words[0]
-    if command_name not in COMMAND_USAGES:
+    if command_name not in COMMAND_NAMES:
         return None
     if len(first_line_words) == 1:
         return command_name, ""
@@ -134,18 +133,18 @@ def _release_review(
 
 def _set_priority(
     *,
-    configured_labels: label_types.ConfiguredLabels,
+    priority_labels: label_types.PriorityLabels,
     pull_request: pr_types.PullRequest,
     argument: str,
 ) -> pr_types.UpdatePlan:
-    try:
-        priority = label_types.Priority(argument.lower())
-    except ValueError:
-        return _usage_reply("/set-priority")
-    wanted_label_name = configured_labels.get_priority_label(priority).name
+    priority_label = priority_labels.get_label(argument)
+    if priority_label is None:
+        priority_names = "|".join(_priority_label.name for _priority_label in priority_labels.labels)
+        return pr_types.UpdatePlan(reply=f"Use `/set-priority <{priority_names}>`.")
+    wanted_label_name = priority_label.full_name
     label_names_to_remove = tuple(
-        _label_name for _label_name in pull_request.label_names if
-        label_types.PriorityLabel.check_name_has_prefix(_label_name) and (_label_name != wanted_label_name)
+        _label_name for _label_name in pull_request.label_names
+        if priority_labels.check_owns(_label_name) and (_label_name != wanted_label_name)
     )
     if wanted_label_name in pull_request.label_names:
         label_names_to_add = ()
@@ -244,7 +243,7 @@ def handle_comment(
         return _author_or_triage_only_reply(command_name)
     elif command_name == "/set-priority":
         return _set_priority(
-            configured_labels=configured_labels,
+            priority_labels=configured_labels.priority_labels,
             pull_request=pull_request,
             argument=argument,
         )

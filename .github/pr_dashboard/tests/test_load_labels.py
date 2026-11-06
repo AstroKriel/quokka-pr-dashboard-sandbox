@@ -6,9 +6,7 @@ from pr_dashboard import label_types
 from pr_dashboard import load_labels
 
 CONFIGURED_LABELS = load_labels.load_configured_labels(pathlib.Path(__file__).parents[1] / "labels.toml")
-SCOPE_LABEL_TEXT = (
-    '[[scope_label]]\nname = "scope/hydro"\ncolor = "4ADD08"\ndescription = "Hydro"\npaths = ["src/hydro/*"]\n'
-)
+SCOPE_LABEL_TEXT = '[[scope.label]]\nname = "hydro"\ncolor = "4ADD08"\ndescription = "Hydro"\npaths = ["src/hydro/*"]\n'
 
 
 def make_priority_label_text(
@@ -20,16 +18,16 @@ def make_priority_label_text(
         default_line = "default = true\n"
     else:
         default_line = ""
-    return f'[[priority_label]]\nname = "{label_name}"\ncolor = "FBCA04"\ndescription = "Priority"\n{default_line}'
+    return f'[[priority.label]]\nname = "{label_name}"\ncolor = "FBCA04"\ndescription = "Priority"\n{default_line}'
 
 
-LOW_PRIORITY_LABEL_TEXT = make_priority_label_text(label_name="priority/low")
-MEDIUM_PRIORITY_LABEL_TEXT = make_priority_label_text(label_name="priority/medium")
+LOW_PRIORITY_LABEL_TEXT = make_priority_label_text(label_name="low")
+MEDIUM_PRIORITY_LABEL_TEXT = make_priority_label_text(label_name="medium")
 DEFAULT_PRIORITY_LABEL_TEXT = make_priority_label_text(
-    label_name="priority/medium",
+    label_name="medium",
     is_default=True,
 )
-HIGH_PRIORITY_LABEL_TEXT = make_priority_label_text(label_name="priority/high")
+HIGH_PRIORITY_LABEL_TEXT = make_priority_label_text(label_name="high")
 VALID_PRIORITY_LABELS_TEXT = LOW_PRIORITY_LABEL_TEXT + DEFAULT_PRIORITY_LABEL_TEXT + HIGH_PRIORITY_LABEL_TEXT
 
 
@@ -39,9 +37,12 @@ def make_config_text(
     priority_label_text: str = VALID_PRIORITY_LABELS_TEXT,
 ) -> str:
     return (
-        '[not_mapped_label]\nname = "scope/not_mapped"\ncolor = "B60205"\ndescription = "Not mapped"\n'
+        '[scope]\nprefix = "scope/"\n'
+        '[scope.not_mapped_label]\nname = "not_mapped"\ncolor = "B60205"\ndescription = "Not mapped"\n'
         f"{scope_label_text}"
-        '[[size_label]]\nname = "size/XS"\ncolor = "00FF00"\ndescription = "Small"\nmin_num_lines = 0\n'
+        '[size]\nprefix = "size/"\n'
+        '[[size.label]]\nname = "XS"\ncolor = "00FF00"\ndescription = "Small"\nmin_num_lines = 0\n'
+        '[priority]\nprefix = "priority/"\n'
         f"{priority_label_text}"
     )
 
@@ -55,40 +56,55 @@ def load_config_text(
         return load_labels.load_configured_labels(config_path)
 
 
-class TestLoadLabels_Kinds(unittest.TestCase):
+class TestLoadLabels_Categories(unittest.TestCase):
 
-    def test_kinds_are_split(
+    def test_categories_are_split(
         self,
     ):
-        self.assertEqual(len(CONFIGURED_LABELS.scope_labels), 15)
-        self.assertEqual(len(CONFIGURED_LABELS.size_labels), 5)
-        self.assertEqual(len(CONFIGURED_LABELS.priority_labels), 3)
+        self.assertEqual(len(CONFIGURED_LABELS.scope_labels.labels), 15)
+        self.assertEqual(len(CONFIGURED_LABELS.size_labels.labels), 5)
+        self.assertEqual(len(CONFIGURED_LABELS.priority_labels.labels), 3)
         self.assertEqual(len(CONFIGURED_LABELS.all_labels()), 24)
-        for priority_label in CONFIGURED_LABELS.priority_labels:
+        for priority_label in CONFIGURED_LABELS.priority_labels.labels:
             self.assertIsInstance(priority_label, label_types.PriorityLabel)
-        self.assertIsInstance(CONFIGURED_LABELS.not_mapped_label, label_types.NotMappedLabel)
+        self.assertIsInstance(CONFIGURED_LABELS.scope_labels.not_mapped_label, label_types.NotMappedLabel)
 
-    def test_default_priority_is_a_priority_label(
+    def test_full_names_join_prefix_and_name(
         self,
     ):
-        self.assertIsInstance(CONFIGURED_LABELS.default_priority_label, label_types.PriorityLabel)
-        self.assertEqual(CONFIGURED_LABELS.default_priority_label.name, "priority/medium")
-        self.assertTrue(CONFIGURED_LABELS.default_priority_label.is_default)
+        hydro_label = CONFIGURED_LABELS.scope_labels.labels[0]
+        self.assertEqual(hydro_label.name, "hydro")
+        self.assertEqual(hydro_label.full_name, "scope/hydro")
+        self.assertEqual(CONFIGURED_LABELS.scope_labels.not_mapped_label.full_name, "scope/not_mapped")
+        self.assertEqual(CONFIGURED_LABELS.size_labels.labels[0].full_name, "size/XS")
 
-    def test_each_priority_has_its_label(
+    def test_categories_own_their_full_names(
         self,
     ):
-        for priority in label_types.Priority:
-            with self.subTest(priority=priority):
-                priority_label = CONFIGURED_LABELS.get_priority_label(priority)
-                self.assertEqual(priority_label.name, f"priority/{priority}")
+        self.assertTrue(CONFIGURED_LABELS.scope_labels.check_owns("scope/hydro"))
+        self.assertFalse(CONFIGURED_LABELS.scope_labels.check_owns("size/XS"))
+        self.assertTrue(CONFIGURED_LABELS.priority_labels.check_owns("priority/urgent"))
+
+    def test_default_priority_is_medium(
+        self,
+    ):
+        default_label = CONFIGURED_LABELS.priority_labels.default_label
+        self.assertEqual(default_label.full_name, "priority/medium")
+        self.assertTrue(default_label.is_default)
+
+    def test_priority_label_lookup(
+        self,
+    ):
+        self.assertEqual(CONFIGURED_LABELS.priority_labels.get_label("high").full_name, "priority/high")
+        self.assertEqual(CONFIGURED_LABELS.priority_labels.get_label("High").full_name, "priority/high")
+        self.assertIsNone(CONFIGURED_LABELS.priority_labels.get_label("urgent"))
 
     def test_minimal_config_loads(
         self,
     ):
         configured_labels = load_config_text(make_config_text())
-        self.assertEqual(configured_labels.default_priority_label.name, "priority/medium")
-        self.assertFalse(configured_labels.priority_labels[0].is_default)
+        self.assertEqual(configured_labels.priority_labels.default_label.full_name, "priority/medium")
+        self.assertFalse(configured_labels.priority_labels.labels[0].is_default)
 
 
 class TestLoadLabels_Errors(unittest.TestCase):
@@ -97,39 +113,16 @@ class TestLoadLabels_Errors(unittest.TestCase):
         self,
     ):
         config_text = make_config_text(
-            scope_label_text=
-            '[[scope_label]]\nname = "scope/hydro"\ncolor = "4ADD08"\ndescription = "Hydro"\n',
+            scope_label_text='[[scope.label]]\nname = "hydro"\ncolor = "4ADD08"\ndescription = "Hydro"\n',
         )
         with self.assertRaises(KeyError):
             load_config_text(config_text)
 
-    def test_label_with_the_wrong_prefix_fails(
+    def test_category_without_prefix_fails(
         self,
     ):
-        config_text = make_config_text(
-            scope_label_text=SCOPE_LABEL_TEXT.replace(
-                'name = "scope/hydro"',
-                'name = "size/hydro"',
-            ),
-        )
-        with self.assertRaisesRegex(ValueError, "must start with `scope/`"):
-            load_config_text(config_text)
-
-    def test_priority_label_that_is_not_a_level_fails(
-        self,
-    ):
-        urgent_label_text = make_priority_label_text(label_name="priority/urgent")
-        config_text = make_config_text(priority_label_text=VALID_PRIORITY_LABELS_TEXT + urgent_label_text)
-        with self.assertRaisesRegex(ValueError, "`priority/urgent` must end in one of"):
-            load_config_text(config_text)
-
-    def test_missing_priority_level_fails(
-        self,
-    ):
-        config_text = make_config_text(
-            priority_label_text=LOW_PRIORITY_LABEL_TEXT + DEFAULT_PRIORITY_LABEL_TEXT
-        )
-        with self.assertRaisesRegex(ValueError, "must cover each of"):
+        config_text = make_config_text().replace('[size]\nprefix = "size/"\n', "")
+        with self.assertRaises(KeyError):
             load_config_text(config_text)
 
     def test_no_default_priority_fails(
@@ -146,7 +139,7 @@ class TestLoadLabels_Errors(unittest.TestCase):
         self,
     ):
         default_high_label_text = make_priority_label_text(
-            label_name="priority/high",
+            label_name="high",
             is_default=True,
         )
         config_text = make_config_text(
