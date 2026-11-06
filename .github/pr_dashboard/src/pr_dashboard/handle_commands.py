@@ -30,7 +30,7 @@ COMMAND_HELPS = {
     CommandHelp(
         usage="`/accept-review <YYYY-MM-DD>`",
         description="take on this PR's review, with the date you will review by",
-        allowed_users="write access",
+        allowed_users="maintainers (anyone with write access)",
     ),
     "/release-review":
     CommandHelp(
@@ -42,19 +42,19 @@ COMMAND_HELPS = {
     CommandHelp(
         usage="`/set-priority <{priority_values}>`",
         description="set this PR's priority",
-        allowed_users="the PR author, or triage access or higher",
+        allowed_users="the PR author, or maintainers",
     ),
     "/set-milestone":
     CommandHelp(
         usage="`/set-milestone <title|none>`",
         description="set or remove this PR's milestone",
-        allowed_users="the PR author, or triage access or higher",
+        allowed_users="the PR author, or maintainers",
     ),
     "/recompute-labels":
     CommandHelp(
         usage="`/recompute-labels`",
         description="recalculate the scope and size labels",
-        allowed_users="the PR author, or triage access or higher",
+        allowed_users="the PR author, or maintainers",
     ),
     "/help":
     CommandHelp(
@@ -106,7 +106,7 @@ def _help_reply(
             command_name=command_name,
             priority_labels=priority_labels,
         )
-        help_line = f"- {usage}: {command_help.description} ({command_help.allowed_users})"
+        help_line = f"- {usage}: {command_help.description}. For {command_help.allowed_users}."
         help_lines.append(help_line)
     return pr_types.UpdatePlan(reply="\n".join(help_lines))
 
@@ -138,7 +138,7 @@ def _author_or_triage_only_reply(
     command_name: str,
 ) -> pr_types.UpdatePlan:
     return pr_types.UpdatePlan(
-        reply=f"Only the PR author and people with triage access or higher can use `{command_name}`.",
+        reply=f"Only the PR author and maintainers can use `{command_name}`.",
     )
 
 
@@ -154,7 +154,7 @@ def _accept_review(
     except ValueError:
         review_date = None
     if comment.user.role_in_repo not in _ROLES_WITH_WRITE_ACCESS:
-        return pr_types.UpdatePlan(reply="Only people with write access can accept a review.")
+        return pr_types.UpdatePlan(reply="Only maintainers (anyone with write access) can accept a review.")
     elif comment.user.user_name == pull_request.author_user_name:
         return pr_types.UpdatePlan(reply="You can't accept the review of your own PR.")
     elif review_date is None:

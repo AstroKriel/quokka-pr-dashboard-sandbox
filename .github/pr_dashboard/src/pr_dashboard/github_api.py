@@ -113,7 +113,7 @@ def get_user(
 ) -> pr_types.User:
     try:
         permission_data = _read_from_github(
-            endpoint=f"repos/{repo}/collaborators/{_quote(user_name)}/permission"
+            endpoint=f"repos/{repo}/collaborators/{_quote(user_name)}/permission",
         )
         role_in_repo = pr_types.RoleInRepo(permission_data["role_name"])
     except (subprocess.CalledProcessError, ValueError):

@@ -177,7 +177,9 @@ class TestHandleCommands_AcceptReview(unittest.TestCase):
             user_name="contributor",
             role_in_repo=pr_types.RoleInRepo.READ,
         )
-        expected_update_plan = pr_types.UpdatePlan(reply="Only people with write access can accept a review.")
+        expected_update_plan = pr_types.UpdatePlan(
+            reply="Only maintainers (anyone with write access) can accept a review."
+        )
         self.assertEqual(update_plan, expected_update_plan)
 
     def test_triage_is_not_enough(
@@ -188,7 +190,9 @@ class TestHandleCommands_AcceptReview(unittest.TestCase):
             user_name="triager",
             role_in_repo=pr_types.RoleInRepo.TRIAGE,
         )
-        expected_update_plan = pr_types.UpdatePlan(reply="Only people with write access can accept a review.")
+        expected_update_plan = pr_types.UpdatePlan(
+            reply="Only maintainers (anyone with write access) can accept a review."
+        )
         self.assertEqual(update_plan, expected_update_plan)
 
     def test_author_cannot_accept_own_pr(
@@ -307,7 +311,7 @@ class TestHandleCommands_SetPriority(unittest.TestCase):
             user_name="passer-by",
             role_in_repo=pr_types.RoleInRepo.READ,
         )
-        expected_reply = "Only the PR author and people with triage access or higher can use `/set-priority`."
+        expected_reply = "Only the PR author and maintainers can use `/set-priority`."
         self.assertEqual(update_plan, pr_types.UpdatePlan(reply=expected_reply))
 
 
