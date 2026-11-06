@@ -145,12 +145,9 @@ def sync_label_set(
             )
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    action_parsers = parser.add_subparsers(
-        dest="action",
-        required=True,
-    )
+def add_label_pr_parser(
+    action_parsers: argparse._SubParsersAction,
+) -> None:
     label_pr_parser = action_parsers.add_parser("label-pr")
     label_pr_parser.add_argument("--repo", required=True)
     label_pr_parser.add_argument(
@@ -159,12 +156,33 @@ def main() -> None:
         required=True,
     )
     label_pr_parser.add_argument("--dry-run", action="store_true")
+
+
+def add_handle_comment_parser(
+    action_parsers: argparse._SubParsersAction,
+) -> None:
     handle_comment_parser = action_parsers.add_parser("handle-comment")
     handle_comment_parser.add_argument("--repo", required=True)
     handle_comment_parser.add_argument("--event-path", required=True)
+
+
+def add_sync_label_set_parser(
+    action_parsers: argparse._SubParsersAction,
+) -> None:
     sync_label_set_parser = action_parsers.add_parser("sync-label-set")
     sync_label_set_parser.add_argument("--repo", required=True)
     sync_label_set_parser.add_argument("--dry-run", action="store_true")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    action_parsers = parser.add_subparsers(
+        dest="action",
+        required=True,
+    )
+    add_label_pr_parser(action_parsers)
+    add_handle_comment_parser(action_parsers)
+    add_sync_label_set_parser(action_parsers)
     parsed_args = parser.parse_args()
     if parsed_args.action == "label-pr":
         label_pr(
