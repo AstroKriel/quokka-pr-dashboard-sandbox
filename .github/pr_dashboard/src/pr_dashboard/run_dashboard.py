@@ -54,7 +54,7 @@ def label_pr(
 def run_comment_command(
     *,
     repo: str,
-    event_path: str,
+    event_path: pathlib.Path,
 ) -> None:
     with open(event_path) as event_file:
         event_data = json.load(event_file)
@@ -149,29 +149,53 @@ def add_label_pr_parser(
     action_parsers: argparse._SubParsersAction,
 ) -> None:
     label_pr_parser = action_parsers.add_parser("label-pr")
-    label_pr_parser.add_argument("--repo", required=True)
+    label_pr_parser.add_argument(
+        "--repo",
+        type=str,
+        required=True,
+    )
     label_pr_parser.add_argument(
         "--pr",
         type=int,
         required=True,
     )
-    label_pr_parser.add_argument("--dry-run", action="store_true")
+    label_pr_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        default=False,
+    )
 
 
 def add_run_command_parser(
     action_parsers: argparse._SubParsersAction,
 ) -> None:
     run_command_parser = action_parsers.add_parser("run-command")
-    run_command_parser.add_argument("--repo", required=True)
-    run_command_parser.add_argument("--event-path", required=True)
+    run_command_parser.add_argument(
+        "--repo",
+        type=str,
+        required=True,
+    )
+    run_command_parser.add_argument(
+        "--event-path",
+        type=pathlib.Path,
+        required=True,
+    )
 
 
 def add_update_repo_labels_parser(
     action_parsers: argparse._SubParsersAction,
 ) -> None:
     update_repo_labels_parser = action_parsers.add_parser("update-repo-labels")
-    update_repo_labels_parser.add_argument("--repo", required=True)
-    update_repo_labels_parser.add_argument("--dry-run", action="store_true")
+    update_repo_labels_parser.add_argument(
+        "--repo",
+        type=str,
+        required=True,
+    )
+    update_repo_labels_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        default=False,
+    )
 
 
 def main() -> None:
