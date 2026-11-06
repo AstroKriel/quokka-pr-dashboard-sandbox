@@ -77,18 +77,15 @@ def handle_comment(
 def _label_sync_step(
     label_definition: labels.LabelDefinition,
     repo_labels: dict[str, dict],
-) -> tuple[str, str] | None:
+) -> str | None:
     existing_label = repo_labels.get(label_definition.name)
-    renamable_label = repo_labels.get(label_definition.renamed_from)
-    if (existing_label is None) and (renamable_label is None):
-        return "create", label_definition.name
-    elif existing_label is None:
-        return "rename", label_definition.renamed_from
+    if existing_label is None:
+        return "create"
     elif ((existing_label["color"].lower() == label_definition.color.lower())
           and (existing_label["description"] == label_definition.description)):
         return None
     else:
-        return "update", label_definition.name
+        return "update"
 
 
 def sync_label_set(
@@ -98,11 +95,10 @@ def sync_label_set(
     label_config = labels.load_label_config(LABEL_CONFIG_PATH)
     repo_labels = github_api.list_repo_labels(repo)
     for label_definition in label_config.label_definitions:
-        sync_step = _label_sync_step(label_definition, repo_labels)
-        if sync_step is None:
+        sync_action = _label_sync_step(label_definition, repo_labels)
+        if sync_action is None:
             continue
-        sync_action, current_name = sync_step
-        print(f"{sync_action} {current_name} -> {label_definition.name}")
+        print(f"{sync_action} {label_definition.name}")
         if dry_run:
             continue
         elif sync_action == "create":
@@ -111,11 +107,7 @@ def sync_label_set(
             )
         else:
             github_api.update_label(
-                repo,
-                current_name,
-                label_definition.name,
-                label_definition.color,
-                label_definition.description,
+                repo, label_definition.name, label_definition.color, label_definition.description
             )
 
 

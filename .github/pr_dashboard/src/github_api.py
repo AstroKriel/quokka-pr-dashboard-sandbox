@@ -106,14 +106,13 @@ def create_label(
 
 def update_label(
     repo: str,
-    current_name: str,
     name: str,
     color: str,
     description: str,
 ) -> None:
-    label_fields = {"new_name": name, "color": color, "description": description}
+    label_fields = {"color": color, "description": description}
     _gh_api(
-        f"repos/{repo}/labels/{_quote(current_name)}",
+        f"repos/{repo}/labels/{_quote(name)}",
         method="PATCH",
         fields=label_fields,
     )

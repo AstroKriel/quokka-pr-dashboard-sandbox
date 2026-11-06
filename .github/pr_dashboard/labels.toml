@@ -4,7 +4,7 @@
 # A pattern's `*` also matches `/`, so `src/hydro/*` covers every file below `src/hydro/`.
 # size/ labels are set from the lines changed (additions plus deletions): a PR gets the
 # largest `min_num_lines` it reaches.
-# `renamed_from` renames an existing label, which keeps it on every issue and PR.
+# scope/ and size/ labels are set by the tool; edits by hand are replaced.
 
 default_priority = "priority/medium"
 
@@ -16,7 +16,6 @@ paths = ["src/problems/*", "inputs/*", "extern/*"]
 name = "scope/hydro"
 color = "4ADD08"
 description = "Hydrodynamics"
-renamed_from = "hydro"
 paths = [
     "src/hydro/*",
     "src/turbulence/*",
@@ -30,7 +29,6 @@ paths = [
 name = "scope/MHD"
 color = "66735C"
 description = "Magnetohydrodynamics"
-renamed_from = "MHD"
 paths = [
     "src/hydro/mhd_system*",
     "src/hydro/HLLD*",
@@ -52,7 +50,6 @@ paths = [
 name = "scope/radiation"
 color = "CAD629"
 description = "Radiation transport"
-renamed_from = "radiation"
 paths = [
     "src/radiation/*",
     "src/problems/Rad*",
@@ -65,7 +62,6 @@ paths = [
 name = "scope/particles"
 color = "277120"
 description = "Particles"
-renamed_from = "particles"
 paths = [
     "src/particles/*",
     "src/problems/Particle*",
@@ -121,7 +117,6 @@ paths = ["src/conduction/*", "src/problems/ThermalConduction*", "inputs/ThermalC
 name = "scope/IO"
 color = "1D76DB"
 description = "Input and output"
-renamed_from = "I/O"
 paths = ["src/io/*"]
 
 [[label]]
@@ -175,7 +170,6 @@ paths = ["scripts/*", ".agents/*", ".claude/*", "AGENTS.md", "CLAUDE.md", "conte
 name = "scope/CI"
 color = "BFDADC"
 description = "Continuous integration and code checkers"
-renamed_from = "CI"
 paths = [
     ".github/*",
     ".ci/*",
@@ -195,49 +189,42 @@ paths = [
 name = "scope/documentation"
 color = "0075CA"
 description = "Documentation"
-renamed_from = "documentation"
 paths = ["docs/*", "*.md", "paper/*", "CITATION.cff", "LICENSE", ".mailmap"]
 
 [[label]]
 name = "size/XS"
 color = "00FF00"
 description = "This PR changes 0 to 9 lines"
-renamed_from = "size:XS"
 min_num_lines =0
 
 [[label]]
 name = "size/S"
 color = "77B800"
 description = "This PR changes 10 to 29 lines"
-renamed_from = "size:S"
 min_num_lines =10
 
 [[label]]
 name = "size/M"
 color = "EBB800"
 description = "This PR changes 30 to 99 lines"
-renamed_from = "size:M"
 min_num_lines =30
 
 [[label]]
 name = "size/L"
 color = "EB9500"
 description = "This PR changes 100 to 499 lines"
-renamed_from = "size:L"
 min_num_lines =100
 
 [[label]]
 name = "size/XL"
 color = "FF823F"
 description = "This PR changes 500 or more lines"
-renamed_from = "size:XL"
 min_num_lines =500
 
 [[label]]
 name = "priority/low"
 color = "0E8A16"
 description = "Review when there is time"
-renamed_from = "priority:low"
 
 [[label]]
 name = "priority/medium"
@@ -248,4 +235,3 @@ description = "Review at the normal pace"
 name = "priority/high"
 color = "D93F0B"
 description = "Review soon"
-renamed_from = "priority:high"

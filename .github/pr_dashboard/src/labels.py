@@ -13,7 +13,6 @@ class LabelDefinition:
     name: str
     color: str
     description: str
-    renamed_from: str | None
     paths: tuple[str, ...]
     min_num_lines: int | None
 
@@ -42,7 +41,6 @@ def load_label_config(
             name=_label_data["name"],
             color=_label_data["color"],
             description=_label_data["description"],
-            renamed_from=_label_data.get("renamed_from"),
             paths=tuple(
                 _label_data.get(
                     "paths",

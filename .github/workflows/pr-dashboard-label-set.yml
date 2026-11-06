@@ -22,7 +22,7 @@ jobs:
           sparse-checkout: .github/pr_dashboard
           persist-credentials: false
 
-      - name: Create, rename and update the labels in labels.toml
+      - name: Create and update the labels in labels.toml
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 .github/pr_dashboard/src/main.py sync-label-set
