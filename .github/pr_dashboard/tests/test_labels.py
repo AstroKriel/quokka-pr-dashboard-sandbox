@@ -31,42 +31,45 @@ class TestScopeLabels(unittest.TestCase):
             "src/problems/ParticleSink/test_particle_sink.cpp",
         )
         scope_label_names = labels.compute_scope_label_names(CONFIGURED_LABELS, file_paths)
-        self.assertEqual(scope_label_names, {"scope/MHD", "scope/radiation", "scope/dust", "scope/particles"})
+        expected_label_names = {
+            "scope/MHD", "scope/radiation", "scope/dust", "scope/particles", "scope/tests"
+        }
+        self.assertEqual(scope_label_names, expected_label_names)
 
     def test_inputs_follow_their_problem(
         self,
     ):
         file_paths = ("inputs/MHDBlast.toml", "inputs/alfven_wave_linear_regression.toml")
         scope_label_names = labels.compute_scope_label_names(CONFIGURED_LABELS, file_paths)
-        self.assertEqual(scope_label_names, {"scope/MHD"})
+        self.assertEqual(scope_label_names, {"scope/MHD", "scope/tests"})
 
-    def test_unclaimed_problem_falls_back_to_tests(
+    def test_problem_with_no_physics_area_is_tests(
         self,
     ):
         file_paths = ("src/problems/SN/testSN.cpp", "inputs/SN.toml", "extern/Toro/e1rpex.ini")
         scope_label_names = labels.compute_scope_label_names(CONFIGURED_LABELS, file_paths)
         self.assertEqual(scope_label_names, {"scope/tests"})
 
-    def test_claimed_problem_does_not_also_get_tests(
+    def test_unknown_file_is_not_mapped(
         self,
     ):
-        scope_label_names = labels.compute_scope_label_names(
-            CONFIGURED_LABELS, ("src/problems/RadTube/testRadTube.cpp", )
-        )
-        self.assertEqual(scope_label_names, {"scope/radiation"})
+        file_paths = ("src/newmodule/thing.hpp", "src/hydro/HLLC.hpp")
+        scope_label_names = labels.compute_scope_label_names(CONFIGURED_LABELS, file_paths)
+        self.assertEqual(scope_label_names, {"scope/not_mapped", "scope/hydro"})
 
     def test_build_files_and_libraries(
         self,
     ):
         file_paths = ("src/CMakeLists.txt", "src/problems/ProblemHelpers.cmake", "extern/amrex")
         scope_label_names = labels.compute_scope_label_names(CONFIGURED_LABELS, file_paths)
-        self.assertEqual(scope_label_names, {"scope/build"})
+        self.assertEqual(scope_label_names, {"scope/build", "scope/tests"})
 
     def test_problem_registry_is_tests(
         self,
     ):
         scope_label_names = labels.compute_scope_label_names(
-            CONFIGURED_LABELS, ("src/problems/CMakeLists.txt", )
+            CONFIGURED_LABELS,
+            ("src/problems/CMakeLists.txt", ),
         )
         self.assertEqual(scope_label_names, {"scope/tests"})
 
@@ -74,7 +77,8 @@ class TestScopeLabels(unittest.TestCase):
         self,
     ):
         scope_label_names = labels.compute_scope_label_names(
-            CONFIGURED_LABELS, ("scripts/python/prune_checkpoints.py", )
+            CONFIGURED_LABELS,
+            ("scripts/python/prune_checkpoints.py", ),
         )
         self.assertEqual(scope_label_names, {"scope/tools"})
 
@@ -97,15 +101,12 @@ class TestScopeLabels(unittest.TestCase):
             check=True,
         )
         file_paths = completed_process.stdout.splitlines()
-        unscoped_paths = [
-            _file_path for _file_path in file_paths if len(
-                labels.compute_scope_label_names(
-                    CONFIGURED_LABELS,
-                    (_file_path, ),
-                ),
-            ) == 0
+        not_mapped_label_name = CONFIGURED_LABELS.not_mapped_label.name
+        not_mapped_paths = [
+            _file_path for _file_path in file_paths
+            if not_mapped_label_name in labels.compute_scope_label_names(CONFIGURED_LABELS, (_file_path, ))
         ]
-        self.assertEqual(unscoped_paths, [], "Add these paths to a scope in labels.toml")
+        self.assertEqual(not_mapped_paths, [], "Add these paths to a scope in labels.toml")
 
 
 class TestLoadConfiguredLabels(unittest.TestCase):
@@ -116,14 +117,14 @@ class TestLoadConfiguredLabels(unittest.TestCase):
         self.assertEqual(len(CONFIGURED_LABELS.scope_labels), 15)
         self.assertEqual(len(CONFIGURED_LABELS.size_labels), 5)
         self.assertEqual(len(CONFIGURED_LABELS.priority_labels), 3)
-        self.assertEqual(len(CONFIGURED_LABELS.all_labels()), 23)
+        self.assertEqual(len(CONFIGURED_LABELS.all_labels()), 24)
 
     def test_scope_label_without_paths_fails(
         self,
     ):
         config_text = (
             'default_priority = "priority/medium"\n'
-            '[scope_fallback]\nlabel = "scope/tests"\npaths = []\n'
+            '[not_mapped_label]\nname = "scope/not_mapped"\ncolor = "B60205"\ndescription = "Not mapped"\n'
             '[[scope_label]]\nname = "scope/hydro"\ncolor = "4ADD08"\ndescription = "Hydrodynamics"\n'
             '[[size_label]]\nname = "size/XS"\ncolor = "00FF00"\ndescription = "Small"\nmin_num_lines = 0\n'
             '[[priority_label]]\nname = "priority/medium"\ncolor = "FBCA04"\ndescription = "Normal"\n'
@@ -155,7 +156,8 @@ class TestSizeLabel(unittest.TestCase):
         for num_lines_changed, expected_size in expected_sizes.items():
             with self.subTest(num_lines_changed=num_lines_changed):
                 self.assertEqual(
-                    labels.compute_size_label_name(CONFIGURED_LABELS, num_lines_changed), expected_size
+                    labels.compute_size_label_name(CONFIGURED_LABELS, num_lines_changed),
+                    expected_size,
                 )
 
 

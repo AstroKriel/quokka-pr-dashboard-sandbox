@@ -5,12 +5,15 @@
 # size/ labels are set from the lines changed (additions plus deletions): a PR gets the
 # largest `min_num_lines` it reaches.
 # scope/ and size/ labels are set by the tool; edits by hand are replaced.
+# A changed file that matches no scope gives the PR scope/not_mapped, to show that its
+# path needs adding to a scope here.
 
 default_priority = "priority/medium"
 
-[scope_fallback]
-label = "scope/tests"
-paths = ["src/problems/*", "inputs/*", "extern/*"]
+[not_mapped_label]
+name = "scope/not_mapped"
+color = "B60205"
+description = "A changed file matches no scope in labels.toml"
 
 [[scope_label]]
 name = "scope/hydro"
@@ -158,7 +161,7 @@ paths = [
 name = "scope/tests"
 color = "FEF2C0"
 description = "Test problems, inputs, reference data and the regression suite"
-paths = ["regression/*", "tests/*"]
+paths = ["src/problems/*", "inputs/*", "extern/*", "regression/*", "tests/*"]
 
 [[scope_label]]
 name = "scope/tools"

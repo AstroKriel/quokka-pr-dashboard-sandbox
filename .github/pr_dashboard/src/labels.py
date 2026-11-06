@@ -30,14 +30,13 @@ class ConfiguredLabels:
     scope_labels: tuple[ScopeLabel, ...]
     size_labels: tuple[SizeLabel, ...]
     priority_labels: tuple[Label, ...]
+    not_mapped_label: Label
     default_priority_label_name: str
-    scope_fallback_label_name: str
-    scope_fallback_paths: tuple[str, ...]
 
     def all_labels(
         self,
     ) -> tuple[Label, ...]:
-        return self.scope_labels + self.size_labels + self.priority_labels
+        return self.scope_labels + (self.not_mapped_label, ) + self.size_labels + self.priority_labels
 
 
 @dataclasses.dataclass(frozen=True)
@@ -74,13 +73,17 @@ def load_configured_labels(
             description=_label_data["description"],
         ) for _label_data in config_data["priority_label"]
     )
+    not_mapped_label = Label(
+        name=config_data["not_mapped_label"]["name"],
+        color=config_data["not_mapped_label"]["color"],
+        description=config_data["not_mapped_label"]["description"],
+    )
     return ConfiguredLabels(
         scope_labels=scope_labels,
         size_labels=size_labels,
         priority_labels=priority_labels,
+        not_mapped_label=not_mapped_label,
         default_priority_label_name=config_data["default_priority"],
-        scope_fallback_label_name=config_data["scope_fallback"]["label"],
-        scope_fallback_paths=tuple(config_data["scope_fallback"]["paths"]),
     )
 
 
@@ -102,9 +105,8 @@ def compute_scope_label_names(
             for _scope_label in configured_labels.scope_labels
             if _path_matches_any(file_path, _scope_label.paths)
         }
-        if (len(matched_label_names) == 0) and _path_matches_any(file_path,
-                                                                 configured_labels.scope_fallback_paths):
-            scope_label_names.add(configured_labels.scope_fallback_label_name)
+        if len(matched_label_names) == 0:
+            scope_label_names.add(configured_labels.not_mapped_label.name)
         else:
             scope_label_names.update(matched_label_names)
     return scope_label_names
