@@ -53,7 +53,7 @@ def label_pr(
         )
 
 
-def run_comment_command(
+def run_command_from_comment(
     *,
     repo: str,
     event_path: pathlib.Path,
@@ -227,7 +227,7 @@ def main() -> None:
             dry_run=parsed_args.dry_run,
         )
     elif parsed_args.action == "run-command":
-        run_comment_command(
+        run_command_from_comment(
             repo=parsed_args.repo,
             event_path=parsed_args.event_path,
         )
