@@ -195,7 +195,7 @@ class TestComputeLabels_UpdatePlan(unittest.TestCase):
             num_lines_changed=40,
             edited_file_paths=("src/io/plotfile.cpp", ),
         )
-        update_plan = compute_labels.make_label_update_plan(
+        update_plan = compute_labels.plan_update(
             configured_labels=CONFIGURED_LABELS,
             pull_request=pull_request,
         )

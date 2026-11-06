@@ -258,7 +258,7 @@ def _set_milestone(
         )
     elif len(matching_milestones) > 0:
         milestone_change = pr_context.MilestoneChange(
-            milestone_number=matching_milestones[0].milestone_number
+            milestone_number=matching_milestones[0].milestone_number,
         )
         return pr_context.UpdatePlan(
             milestone_change=milestone_change,
@@ -283,14 +283,14 @@ def _recompute_labels(
 ) -> pr_context.UpdatePlan:
     if argument != "":
         return _usage_reply(RECOMPUTE_LABELS)
-    label_update_plan = compute_labels.make_label_update_plan(
+    label_update_plan = compute_labels.plan_update(
         configured_labels=configured_labels,
         pull_request=pull_request,
     )
     return dataclasses.replace(label_update_plan, react=True)
 
 
-def make_comment_update_plan(
+def plan_update(
     *,
     configured_labels: label_types.ConfiguredLabels,
     pull_request: pr_context.PullRequest,
@@ -341,4 +341,4 @@ def make_comment_update_plan(
             argument=argument,
         )
     else:
-        raise ValueError(f"`make_comment_update_plan` has no branch for command `{command.name}`.")
+        raise ValueError(f"`plan_update` has no branch for command `{command.name}`.")

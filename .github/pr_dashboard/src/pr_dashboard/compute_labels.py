@@ -98,7 +98,7 @@ def _compute_label_changes(
     )
 
 
-def make_label_update_plan(
+def plan_update(
     *,
     configured_labels: label_types.ConfiguredLabels,
     pull_request: pr_context.PullRequest,

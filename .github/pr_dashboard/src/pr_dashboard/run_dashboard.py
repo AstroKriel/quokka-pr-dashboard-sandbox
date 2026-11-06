@@ -36,7 +36,7 @@ def label_pr(
         repo=repo,
         pr_number=pr_number,
     )
-    update_plan = compute_labels.make_label_update_plan(
+    update_plan = compute_labels.plan_update(
         configured_labels=configured_labels,
         pull_request=pull_request,
     )
@@ -80,7 +80,7 @@ def run_comment_command(
     )
     open_milestones = github_api.get_open_milestones(repo)
     today = datetime.datetime.now(datetime.timezone.utc).date()
-    update_plan = interpret_commands.make_comment_update_plan(
+    update_plan = interpret_commands.plan_update(
         configured_labels=configured_labels,
         pull_request=pull_request,
         comment=comment,

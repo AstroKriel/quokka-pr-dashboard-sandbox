@@ -57,7 +57,7 @@ def run_command(
         user=user,
         text=text,
     )
-    return interpret_commands.make_comment_update_plan(
+    return interpret_commands.plan_update(
         configured_labels=CONFIGURED_LABELS,
         pull_request=pull_request,
         comment=comment,
