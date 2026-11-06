@@ -6,9 +6,9 @@ import pathlib
 
 from pr_dashboard import compute_labels
 from pr_dashboard import github_api
-from pr_dashboard import pr_commands
 from pr_dashboard import label_types
 from pr_dashboard import load_labels
+from pr_dashboard import pr_commands
 from pr_dashboard import pr_context
 
 LABELS_TOML_PATH = pathlib.Path(__file__).parents[2] / "labels.toml"

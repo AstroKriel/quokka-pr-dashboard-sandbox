@@ -2,8 +2,8 @@ import datetime
 import pathlib
 import unittest
 
-from pr_dashboard import pr_commands
 from pr_dashboard import load_labels
+from pr_dashboard import pr_commands
 from pr_dashboard import pr_context
 
 CONFIGURED_LABELS = load_labels.load_configured_labels(pathlib.Path(__file__).parents[1] / "labels.toml")
