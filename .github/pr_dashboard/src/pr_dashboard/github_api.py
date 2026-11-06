@@ -5,6 +5,10 @@ import urllib.parse
 
 from pr_dashboard import pr_context
 
+##
+## === REQUESTS
+##
+
 _WRITE_METHODS = (
     http.HTTPMethod.POST,
     http.HTTPMethod.PATCH,
@@ -83,6 +87,11 @@ def _quote(
     return urllib.parse.quote(path_part, safe="")
 
 
+##
+## === READS
+##
+
+
 def get_pull_request(
     *,
     repo: str,
@@ -147,6 +156,11 @@ def get_repo_labels(
         paginate=True,
     )
     return {_label_data["name"]: _label_data for _label_page in label_pages for _label_data in _label_page}
+
+
+##
+## === WRITES
+##
 
 
 def create_label(

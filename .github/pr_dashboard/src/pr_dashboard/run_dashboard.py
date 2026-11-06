@@ -12,6 +12,10 @@ from pr_dashboard import pr_labels
 
 LABELS_TOML_PATH = pathlib.Path(__file__).parents[2] / "labels.toml"
 
+##
+## === ACTIONS
+##
+
 
 def print_update_plan(
     update_plan: pr_context.UpdatePlan,
@@ -143,6 +147,11 @@ def update_repo_labels(
             )
 
 
+##
+## === ARGUMENTS
+##
+
+
 def add_label_pr_parser(
     action_parsers: argparse._SubParsersAction,
 ) -> None:
@@ -196,6 +205,11 @@ def add_update_repo_labels_parser(
     )
 
 
+##
+## === PROGRAM MAIN
+##
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     action_parsers = parser.add_subparsers(
@@ -225,6 +239,10 @@ def main() -> None:
     else:
         raise ValueError(f"`main` has no branch for action `{parsed_args.action}`.")
 
+
+##
+## === ENTRY POINT
+##
 
 if __name__ == "__main__":
     main()

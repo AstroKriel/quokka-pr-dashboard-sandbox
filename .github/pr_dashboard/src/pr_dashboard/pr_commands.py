@@ -4,6 +4,10 @@ import datetime
 from pr_dashboard import pr_context
 from pr_dashboard import pr_labels
 
+##
+## === ACCESS RULES
+##
+
 _ROLES_WITH_TRIAGE_ACCESS = (
     pr_context.RoleInRepo.TRIAGE,
     pr_context.RoleInRepo.WRITE,
@@ -15,6 +19,10 @@ _ROLES_WITH_WRITE_ACCESS = (
     pr_context.RoleInRepo.MAINTAIN,
     pr_context.RoleInRepo.ADMIN,
 )
+
+##
+## === COMMANDS
+##
 
 
 @dataclasses.dataclass(frozen=True)
@@ -79,6 +87,10 @@ COMMANDS = (
     HELP,
 )
 
+##
+## === PARSING
+##
+
 
 def parse_command(
     comment_text: str,
@@ -95,6 +107,11 @@ def parse_command(
         return command, ""
     else:
         return command, first_line_words[1].strip()
+
+
+##
+## === REPLIES
+##
 
 
 def _format_usage(
@@ -155,6 +172,11 @@ def _author_or_triage_only_reply(
     return pr_context.UpdatePlan(
         reply=f"Only the PR author and maintainers can use `{command.name}`.",
     )
+
+
+##
+## === COMMAND LOGIC
+##
 
 
 def _accept_review(
@@ -287,6 +309,11 @@ def _recompute_labels(
         pull_request=pull_request,
     )
     return dataclasses.replace(label_update_plan, react=True)
+
+
+##
+## === UPDATE PLAN
+##
 
 
 def plan_update(

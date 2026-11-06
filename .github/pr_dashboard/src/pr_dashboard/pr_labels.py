@@ -3,6 +3,10 @@ import fnmatch
 
 from pr_dashboard import pr_context
 
+##
+## === LABELS
+##
+
 
 @dataclasses.dataclass(frozen=True)
 class Label:
@@ -36,6 +40,11 @@ class SizeLabel(Label):
 @dataclasses.dataclass(frozen=True)
 class PriorityLabel(Label):
     is_default: bool
+
+
+##
+## === LABEL CATEGORIES
+##
 
 
 @dataclasses.dataclass(frozen=True)
@@ -89,6 +98,11 @@ class ConfiguredLabels:
             self.scope_labels.labels + (self.scope_labels.not_mapped_label, ) + self.size_labels.labels +
             self.priority_labels.labels
         )
+
+
+##
+## === LABEL COMPUTATION
+##
 
 
 @dataclasses.dataclass(frozen=True)
@@ -189,6 +203,11 @@ def _compute_label_changes(
         label_names_to_add=tuple(label_names_to_add),
         label_names_to_remove=tuple(label_names_to_remove),
     )
+
+
+##
+## === UPDATE PLAN
+##
 
 
 def plan_update(
