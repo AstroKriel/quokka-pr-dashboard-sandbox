@@ -4,22 +4,22 @@ from pr_dashboard import compute_labels
 from pr_dashboard import label_types
 from pr_dashboard import pr_types
 
-ROLES_WITH_TRIAGE_ACCESS = (
+_ROLES_WITH_TRIAGE_ACCESS = (
     pr_types.RoleInRepo.TRIAGE,
     pr_types.RoleInRepo.WRITE,
     pr_types.RoleInRepo.MAINTAIN,
     pr_types.RoleInRepo.ADMIN,
 )
-ROLES_WITH_WRITE_ACCESS = (
+_ROLES_WITH_WRITE_ACCESS = (
     pr_types.RoleInRepo.WRITE,
     pr_types.RoleInRepo.MAINTAIN,
     pr_types.RoleInRepo.ADMIN,
 )
-PRIORITY_CHOICES = "|".join(pr_types.Priority)
+_PRIORITY_CHOICES = "|".join(pr_types.Priority)
 COMMAND_USAGES = {
     "/accept-review": "`/accept-review <YYYY-MM-DD>`, with the date you will review by",
     "/release-review": "`/release-review`",
-    "/set-priority": f"`/set-priority <{PRIORITY_CHOICES}>`",
+    "/set-priority": f"`/set-priority <{_PRIORITY_CHOICES}>`",
     "/set-milestone": "`/set-milestone <title|none>`",
     "/recompute-labels": "`/recompute-labels`",
 }
@@ -88,7 +88,7 @@ def _accept_review(
         review_date = datetime.date.fromisoformat(argument)
     except ValueError:
         review_date = None
-    if comment.user.role_in_repo not in ROLES_WITH_WRITE_ACCESS:
+    if comment.user.role_in_repo not in _ROLES_WITH_WRITE_ACCESS:
         return pr_types.UpdatePlan(reply="Only people with write access can accept a review.")
     elif comment.user.user_name == pull_request.author:
         return pr_types.UpdatePlan(reply="You can't accept the review of your own PR.")
@@ -218,7 +218,7 @@ def handle_comment(
     command_name, argument = parsed_command
     commenter_is_author_or_triager = (
         (comment.user.user_name == pull_request.author)
-        or (comment.user.role_in_repo in ROLES_WITH_TRIAGE_ACCESS)
+        or (comment.user.role_in_repo in _ROLES_WITH_TRIAGE_ACCESS)
     )
     if command_name == "/accept-review":
         return _accept_review(pull_request, comment, argument, today)
