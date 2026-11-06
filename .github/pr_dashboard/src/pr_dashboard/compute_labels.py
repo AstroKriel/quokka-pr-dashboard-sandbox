@@ -55,11 +55,11 @@ def _check_label_is_stale(
     label_name: str,
     computed_label_names: set[str],
 ) -> bool:
-    label_is_computed_by_tool = (
+    label_is_managed_by_tool = (
         configured_labels.scope_labels.check_has_prefix(label_name)
         or configured_labels.size_labels.check_has_prefix(label_name)
     )
-    return label_is_computed_by_tool and (label_name not in computed_label_names)
+    return label_is_managed_by_tool and (label_name not in computed_label_names)
 
 
 def compute_label_changes(
