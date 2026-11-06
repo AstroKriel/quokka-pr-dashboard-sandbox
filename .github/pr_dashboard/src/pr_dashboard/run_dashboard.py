@@ -97,7 +97,7 @@ def run_comment_command(
     )
 
 
-def get_label_sync_action(
+def get_label_update_action(
     *,
     label: label_types.Label,
     repo_labels: dict[str, dict],
@@ -112,7 +112,7 @@ def get_label_sync_action(
         return "update"
 
 
-def sync_label_set(
+def update_repo_labels(
     *,
     repo: str,
     dry_run: bool,
@@ -120,16 +120,16 @@ def sync_label_set(
     configured_labels = load_labels.load_configured_labels(LABELS_TOML_PATH)
     repo_labels = github_api.get_repo_labels(repo)
     for label in configured_labels.all_labels():
-        sync_action = get_label_sync_action(
+        update_action = get_label_update_action(
             label=label,
             repo_labels=repo_labels,
         )
-        if sync_action is None:
+        if update_action is None:
             continue
-        print(f"{sync_action} {label.label_name}")
+        print(f"{update_action} {label.label_name}")
         if dry_run:
             continue
-        elif sync_action == "create":
+        elif update_action == "create":
             github_api.create_label(
                 repo=repo,
                 name=label.label_name,
@@ -166,12 +166,12 @@ def add_run_command_parser(
     run_command_parser.add_argument("--event-path", required=True)
 
 
-def add_sync_label_set_parser(
+def add_update_repo_labels_parser(
     action_parsers: argparse._SubParsersAction,
 ) -> None:
-    sync_label_set_parser = action_parsers.add_parser("sync-label-set")
-    sync_label_set_parser.add_argument("--repo", required=True)
-    sync_label_set_parser.add_argument("--dry-run", action="store_true")
+    update_repo_labels_parser = action_parsers.add_parser("update-repo-labels")
+    update_repo_labels_parser.add_argument("--repo", required=True)
+    update_repo_labels_parser.add_argument("--dry-run", action="store_true")
 
 
 def main() -> None:
@@ -182,7 +182,7 @@ def main() -> None:
     )
     add_label_pr_parser(action_parsers)
     add_run_command_parser(action_parsers)
-    add_sync_label_set_parser(action_parsers)
+    add_update_repo_labels_parser(action_parsers)
     parsed_args = parser.parse_args()
     if parsed_args.action == "label-pr":
         label_pr(
@@ -195,8 +195,8 @@ def main() -> None:
             repo=parsed_args.repo,
             event_path=parsed_args.event_path,
         )
-    elif parsed_args.action == "sync-label-set":
-        sync_label_set(
+    elif parsed_args.action == "update-repo-labels":
+        update_repo_labels(
             repo=parsed_args.repo,
             dry_run=parsed_args.dry_run,
         )

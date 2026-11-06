@@ -1,4 +1,4 @@
-name: 🏷️ PR Dashboard Label Set
+name: 🏷️ PR Dashboard Repo Labels
 
 on:
   push:
@@ -13,7 +13,7 @@ permissions:
   issues: write
 
 jobs:
-  sync:
+  update:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -22,9 +22,9 @@ jobs:
           sparse-checkout: .github/pr_dashboard
           persist-credentials: false
 
-      - name: Create and update the labels in labels.toml
+      - name: Create and update the repository's labels from labels.toml
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           PYTHONPATH: .github/pr_dashboard/src
-        run: python3 -m pr_dashboard.run_dashboard sync-label-set --repo "$REPO"
+        run: python3 -m pr_dashboard.run_dashboard update-repo-labels --repo "$REPO"
