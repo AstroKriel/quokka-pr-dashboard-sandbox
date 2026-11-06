@@ -32,4 +32,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           PYTHONPATH: .github/pr_dashboard/src
-        run: python3 -m pr_dashboard.run_dashboard handle-comment --repo "$REPO" --event-path "$GITHUB_EVENT_PATH"
+        run: python3 -m pr_dashboard.run_dashboard run-command --repo "$REPO" --event-path "$GITHUB_EVENT_PATH"

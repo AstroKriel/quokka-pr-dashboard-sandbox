@@ -5,7 +5,7 @@ import json
 import pathlib
 
 from pr_dashboard import github_api
-from pr_dashboard import handle_commands
+from pr_dashboard import interpret_commands
 from pr_dashboard import label_types
 from pr_dashboard import load_labels
 from pr_dashboard import pr_types
@@ -35,7 +35,7 @@ def label_pr(
         repo=repo,
         pr_number=pr_number,
     )
-    update_plan = handle_commands.recompute_labels(
+    update_plan = interpret_commands.recompute_labels(
         configured_labels=configured_labels,
         pull_request=pull_request,
         argument="",
@@ -61,7 +61,7 @@ def run_comment_command(
     if "pull_request" not in event_data["issue"]:
         return
     comment_text = event_data["comment"]["body"]
-    if handle_commands.parse_command(comment_text) is None:
+    if interpret_commands.parse_command(comment_text) is None:
         return
     pr_number = event_data["issue"]["number"]
     commenter_user_name = event_data["comment"]["user"]["login"]
@@ -81,7 +81,7 @@ def run_comment_command(
     )
     open_milestones = github_api.get_open_milestones(repo)
     today = datetime.datetime.now(datetime.timezone.utc).date()
-    update_plan = handle_commands.make_comment_update_plan(
+    update_plan = interpret_commands.make_comment_update_plan(
         configured_labels=configured_labels,
         pull_request=pull_request,
         comment=comment,
@@ -158,12 +158,12 @@ def add_label_pr_parser(
     label_pr_parser.add_argument("--dry-run", action="store_true")
 
 
-def add_handle_comment_parser(
+def add_run_command_parser(
     action_parsers: argparse._SubParsersAction,
 ) -> None:
-    handle_comment_parser = action_parsers.add_parser("handle-comment")
-    handle_comment_parser.add_argument("--repo", required=True)
-    handle_comment_parser.add_argument("--event-path", required=True)
+    run_command_parser = action_parsers.add_parser("run-command")
+    run_command_parser.add_argument("--repo", required=True)
+    run_command_parser.add_argument("--event-path", required=True)
 
 
 def add_sync_label_set_parser(
@@ -181,7 +181,7 @@ def main() -> None:
         required=True,
     )
     add_label_pr_parser(action_parsers)
-    add_handle_comment_parser(action_parsers)
+    add_run_command_parser(action_parsers)
     add_sync_label_set_parser(action_parsers)
     parsed_args = parser.parse_args()
     if parsed_args.action == "label-pr":
@@ -190,7 +190,7 @@ def main() -> None:
             pr_number=parsed_args.pr,
             dry_run=parsed_args.dry_run,
         )
-    elif parsed_args.action == "handle-comment":
+    elif parsed_args.action == "run-command":
         run_comment_command(
             repo=parsed_args.repo,
             event_path=parsed_args.event_path,
