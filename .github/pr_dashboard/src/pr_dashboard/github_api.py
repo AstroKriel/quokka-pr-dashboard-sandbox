@@ -154,6 +154,7 @@ def apply_update_plan(
     comment_id: int | None,
     update_plan: pr_types.UpdatePlan,
 ) -> None:
+    # every PR is also an issue: its labels, assignees, milestone and comments live under the issues API
     issue_endpoint = f"repos/{repo}/issues/{pr_number}"
     for label_name in update_plan.label_names_to_remove:
         _gh_api(
