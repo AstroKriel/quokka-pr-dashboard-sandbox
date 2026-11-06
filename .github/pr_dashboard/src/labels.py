@@ -26,10 +26,15 @@ class SizeLabel(Label):
 
 
 @dataclasses.dataclass(frozen=True)
+class PriorityLabel(Label):
+    pass
+
+
+@dataclasses.dataclass(frozen=True)
 class ConfiguredLabels:
     scope_labels: tuple[ScopeLabel, ...]
     size_labels: tuple[SizeLabel, ...]
-    priority_labels: tuple[Label, ...]
+    priority_labels: tuple[PriorityLabel, ...]
     not_mapped_label: Label
     default_priority_label_name: str
 
@@ -67,7 +72,7 @@ def load_configured_labels(
         ) for _label_data in config_data["size_label"]
     )
     priority_labels = tuple(
-        Label(
+        PriorityLabel(
             name=_label_data["name"],
             color=_label_data["color"],
             description=_label_data["description"],

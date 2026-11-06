@@ -32,7 +32,11 @@ class TestScopeLabels(unittest.TestCase):
         )
         scope_label_names = labels.compute_scope_label_names(CONFIGURED_LABELS, file_paths)
         expected_label_names = {
-            "scope/MHD", "scope/radiation", "scope/dust", "scope/particles", "scope/tests"
+            "scope/MHD",
+            "scope/radiation",
+            "scope/dust",
+            "scope/particles",
+            "scope/tests",
         }
         self.assertEqual(scope_label_names, expected_label_names)
 
@@ -118,6 +122,8 @@ class TestLoadConfiguredLabels(unittest.TestCase):
         self.assertEqual(len(CONFIGURED_LABELS.size_labels), 5)
         self.assertEqual(len(CONFIGURED_LABELS.priority_labels), 3)
         self.assertEqual(len(CONFIGURED_LABELS.all_labels()), 24)
+        for priority_label in CONFIGURED_LABELS.priority_labels:
+            self.assertIsInstance(priority_label, labels.PriorityLabel)
 
     def test_scope_label_without_paths_fails(
         self,
