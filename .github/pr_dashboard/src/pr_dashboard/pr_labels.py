@@ -1,7 +1,100 @@
+import dataclasses
 import fnmatch
 
-from pr_dashboard import label_types
 from pr_dashboard import pr_context
+
+
+@dataclasses.dataclass(frozen=True)
+class Label:
+    prefix: str
+    value: str
+    color: str
+    description: str
+
+    @property
+    def label_name(
+        self,
+    ) -> str:
+        return self.prefix + self.value
+
+
+@dataclasses.dataclass(frozen=True)
+class ScopeLabel(Label):
+    path_patterns: tuple[str, ...]
+
+
+@dataclasses.dataclass(frozen=True)
+class NotMappedLabel(Label):
+    pass
+
+
+@dataclasses.dataclass(frozen=True)
+class SizeLabel(Label):
+    min_num_lines: int
+
+
+@dataclasses.dataclass(frozen=True)
+class PriorityLabel(Label):
+    is_default: bool
+
+
+@dataclasses.dataclass(frozen=True)
+class LabelCategory:
+    prefix: str
+
+    def check_has_prefix(
+        self,
+        label_name: str,
+    ) -> bool:
+        return label_name.startswith(self.prefix)
+
+
+@dataclasses.dataclass(frozen=True)
+class ScopeLabels(LabelCategory):
+    labels: tuple[ScopeLabel, ...]
+    not_mapped_label: NotMappedLabel
+
+
+@dataclasses.dataclass(frozen=True)
+class SizeLabels(LabelCategory):
+    labels: tuple[SizeLabel, ...]
+
+
+@dataclasses.dataclass(frozen=True)
+class PriorityLabels(LabelCategory):
+    labels: tuple[PriorityLabel, ...]
+    default_label: PriorityLabel
+
+    def get_label(
+        self,
+        value: str,
+    ) -> PriorityLabel | None:
+        matching_labels = [_label for _label in self.labels if _label.value.lower() == value.lower()]
+        if len(matching_labels) == 0:
+            return None
+        else:
+            return matching_labels[0]
+
+
+@dataclasses.dataclass(frozen=True)
+class ConfiguredLabels:
+    scope_labels: ScopeLabels
+    size_labels: SizeLabels
+    priority_labels: PriorityLabels
+
+    def all_labels(
+        self,
+    ) -> tuple[Label, ...]:
+        return (
+            self.scope_labels.labels + (self.scope_labels.not_mapped_label, ) + self.size_labels.labels +
+            self.priority_labels.labels
+        )
+
+
+@dataclasses.dataclass(frozen=True)
+class _LabelChanges:
+    label_names_to_add: tuple[str, ...]
+    label_names_to_remove: tuple[str, ...]
 
 
 def _path_matches_any(
@@ -14,7 +107,7 @@ def _path_matches_any(
 
 def _compute_scope_label_names(
     *,
-    configured_labels: label_types.ConfiguredLabels,
+    configured_labels: ConfiguredLabels,
     edited_file_paths: tuple[str, ...],
 ) -> set[str]:
     scope_label_names = set()
@@ -36,7 +129,7 @@ def _compute_scope_label_names(
 
 def _compute_size_label_name(
     *,
-    configured_labels: label_types.ConfiguredLabels,
+    configured_labels: ConfiguredLabels,
     num_lines_changed: int,
 ) -> str:
     increasing_size_labels = sorted(
@@ -52,7 +145,7 @@ def _compute_size_label_name(
 
 def _check_label_is_stale(
     *,
-    configured_labels: label_types.ConfiguredLabels,
+    configured_labels: ConfiguredLabels,
     computed_label_names: set[str],
     label_name: str,
 ) -> bool:
@@ -65,11 +158,11 @@ def _check_label_is_stale(
 
 def _compute_label_changes(
     *,
-    configured_labels: label_types.ConfiguredLabels,
+    configured_labels: ConfiguredLabels,
     current_label_names: tuple[str, ...],
     edited_file_paths: tuple[str, ...],
     num_lines_changed: int,
-) -> label_types.LabelChanges:
+) -> _LabelChanges:
     computed_label_names = _compute_scope_label_names(
         configured_labels=configured_labels,
         edited_file_paths=edited_file_paths,
@@ -92,7 +185,7 @@ def _compute_label_changes(
             label_name=_label_name,
         )
     )
-    return label_types.LabelChanges(
+    return _LabelChanges(
         label_names_to_add=tuple(label_names_to_add),
         label_names_to_remove=tuple(label_names_to_remove),
     )
@@ -100,7 +193,7 @@ def _compute_label_changes(
 
 def plan_update(
     *,
-    configured_labels: label_types.ConfiguredLabels,
+    configured_labels: ConfiguredLabels,
     pull_request: pr_context.PullRequest,
 ) -> pr_context.UpdatePlan:
     label_changes = _compute_label_changes(

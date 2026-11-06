@@ -4,12 +4,11 @@ import datetime
 import json
 import pathlib
 
-from pr_dashboard import compute_labels
 from pr_dashboard import github_api
-from pr_dashboard import label_types
 from pr_dashboard import load_labels
 from pr_dashboard import pr_commands
 from pr_dashboard import pr_context
+from pr_dashboard import pr_labels
 
 LABELS_TOML_PATH = pathlib.Path(__file__).parents[2] / "labels.toml"
 
@@ -36,7 +35,7 @@ def label_pr(
         repo=repo,
         pr_number=pr_number,
     )
-    update_plan = compute_labels.plan_update(
+    update_plan = pr_labels.plan_update(
         configured_labels=configured_labels,
         pull_request=pull_request,
     )
@@ -98,7 +97,7 @@ def run_comment_command(
 
 def get_label_update_action(
     *,
-    label: label_types.Label,
+    label: pr_labels.Label,
     repo_labels: dict[str, dict],
 ) -> str | None:
     existing_label_data = repo_labels.get(label.label_name)

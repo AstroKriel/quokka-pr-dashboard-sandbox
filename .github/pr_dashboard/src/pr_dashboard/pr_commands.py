@@ -1,9 +1,8 @@
 import dataclasses
 import datetime
 
-from pr_dashboard import compute_labels
-from pr_dashboard import label_types
 from pr_dashboard import pr_context
+from pr_dashboard import pr_labels
 
 _ROLES_WITH_TRIAGE_ACCESS = (
     pr_context.RoleInRepo.TRIAGE,
@@ -101,7 +100,7 @@ def parse_command(
 def _format_usage(
     *,
     command: Command,
-    priority_labels: label_types.PriorityLabels,
+    priority_labels: pr_labels.PriorityLabels,
 ) -> str:
     priority_values = "|".join(_priority_label.value for _priority_label in priority_labels.labels)
     return command.usage.format(priority_values=priority_values)
@@ -114,7 +113,7 @@ def _usage_reply(
 
 
 def _help_reply(
-    priority_labels: label_types.PriorityLabels,
+    priority_labels: pr_labels.PriorityLabels,
 ) -> pr_context.UpdatePlan:
     help_lines = ["PR dashboard commands:"]
     for command in COMMANDS:
@@ -214,7 +213,7 @@ def _release_review(
 
 def _set_priority(
     *,
-    priority_labels: label_types.PriorityLabels,
+    priority_labels: pr_labels.PriorityLabels,
     pull_request: pr_context.PullRequest,
     argument: str,
 ) -> pr_context.UpdatePlan:
@@ -277,13 +276,13 @@ def _set_milestone(
 
 def _recompute_labels(
     *,
-    configured_labels: label_types.ConfiguredLabels,
+    configured_labels: pr_labels.ConfiguredLabels,
     pull_request: pr_context.PullRequest,
     argument: str,
 ) -> pr_context.UpdatePlan:
     if argument != "":
         return _usage_reply(RECOMPUTE_LABELS)
-    label_update_plan = compute_labels.plan_update(
+    label_update_plan = pr_labels.plan_update(
         configured_labels=configured_labels,
         pull_request=pull_request,
     )
@@ -292,7 +291,7 @@ def _recompute_labels(
 
 def plan_update(
     *,
-    configured_labels: label_types.ConfiguredLabels,
+    configured_labels: pr_labels.ConfiguredLabels,
     pull_request: pr_context.PullRequest,
     comment: pr_context.Comment,
     open_milestones: tuple[pr_context.Milestone, ...],

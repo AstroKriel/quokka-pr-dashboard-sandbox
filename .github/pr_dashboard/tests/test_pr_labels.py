@@ -2,9 +2,9 @@ import pathlib
 import subprocess
 import unittest
 
-from pr_dashboard import compute_labels
 from pr_dashboard import load_labels
 from pr_dashboard import pr_context
+from pr_dashboard import pr_labels
 
 CONFIGURED_LABELS = load_labels.load_configured_labels(pathlib.Path(__file__).parents[1] / "labels.toml")
 
@@ -12,13 +12,13 @@ CONFIGURED_LABELS = load_labels.load_configured_labels(pathlib.Path(__file__).pa
 def get_scope_label_names(
     edited_file_paths: tuple[str, ...],
 ) -> set[str]:
-    return compute_labels._compute_scope_label_names(
+    return pr_labels._compute_scope_label_names(
         configured_labels=CONFIGURED_LABELS,
         edited_file_paths=edited_file_paths,
     )
 
 
-class TestComputeLabels_Scope(unittest.TestCase):
+class TestPrLabels_Scope(unittest.TestCase):
 
     def test_hydro_file(
         self,
@@ -117,7 +117,7 @@ class TestComputeLabels_Scope(unittest.TestCase):
         self.assertEqual(not_mapped_paths, [], "Add these paths to a scope in labels.toml")
 
 
-class TestComputeLabels_Size(unittest.TestCase):
+class TestPrLabels_Size(unittest.TestCase):
 
     def test_boundaries(
         self,
@@ -136,19 +136,19 @@ class TestComputeLabels_Size(unittest.TestCase):
         }
         for num_lines_changed, expected_size in expected_sizes.items():
             with self.subTest(num_lines_changed=num_lines_changed):
-                size_label_name = compute_labels._compute_size_label_name(
+                size_label_name = pr_labels._compute_size_label_name(
                     configured_labels=CONFIGURED_LABELS,
                     num_lines_changed=num_lines_changed,
                 )
                 self.assertEqual(size_label_name, expected_size)
 
 
-class TestComputeLabels_Changes(unittest.TestCase):
+class TestPrLabels_Changes(unittest.TestCase):
 
     def test_new_pr_gets_scope_size_and_default_priority(
         self,
     ):
-        label_changes = compute_labels._compute_label_changes(
+        label_changes = pr_labels._compute_label_changes(
             configured_labels=CONFIGURED_LABELS,
             current_label_names=(),
             edited_file_paths=("src/io/plotfile.cpp", ),
@@ -160,7 +160,7 @@ class TestComputeLabels_Changes(unittest.TestCase):
     def test_stale_scope_and_size_are_replaced_and_others_kept(
         self,
     ):
-        label_changes = compute_labels._compute_label_changes(
+        label_changes = pr_labels._compute_label_changes(
             configured_labels=CONFIGURED_LABELS,
             current_label_names=("scope/radiation", "size/XS", "priority/high", "code-audit"),
             edited_file_paths=("src/io/plotfile.cpp", ),
@@ -172,7 +172,7 @@ class TestComputeLabels_Changes(unittest.TestCase):
     def test_up_to_date_pr_needs_no_changes(
         self,
     ):
-        label_changes = compute_labels._compute_label_changes(
+        label_changes = pr_labels._compute_label_changes(
             configured_labels=CONFIGURED_LABELS,
             current_label_names=("scope/IO", "size/M", "priority/low"),
             edited_file_paths=("src/io/plotfile.cpp", ),
@@ -182,7 +182,7 @@ class TestComputeLabels_Changes(unittest.TestCase):
         self.assertEqual(label_changes.label_names_to_remove, ())
 
 
-class TestComputeLabels_UpdatePlan(unittest.TestCase):
+class TestPrLabels_UpdatePlan(unittest.TestCase):
 
     def test_changes_only_labels(
         self,
@@ -195,7 +195,7 @@ class TestComputeLabels_UpdatePlan(unittest.TestCase):
             num_lines_changed=40,
             edited_file_paths=("src/io/plotfile.cpp", ),
         )
-        update_plan = compute_labels.plan_update(
+        update_plan = pr_labels.plan_update(
             configured_labels=CONFIGURED_LABELS,
             pull_request=pull_request,
         )

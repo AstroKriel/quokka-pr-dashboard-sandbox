@@ -2,8 +2,8 @@ import pathlib
 import tempfile
 import unittest
 
-from pr_dashboard import label_types
 from pr_dashboard import load_labels
+from pr_dashboard import pr_labels
 
 CONFIGURED_LABELS = load_labels.load_configured_labels(pathlib.Path(__file__).parents[1] / "labels.toml")
 SCOPE_LABEL_TEXT = '[[scope.label]]\nvalue = "hydro"\ncolor = "4ADD08"\ndescription = "Hydro"\npath_patterns = ["src/hydro/*"]\n'
@@ -49,7 +49,7 @@ def make_config_text(
 
 def load_config_text(
     config_text: str,
-) -> label_types.ConfiguredLabels:
+) -> pr_labels.ConfiguredLabels:
     with tempfile.TemporaryDirectory() as temp_dir:
         config_path = pathlib.Path(temp_dir) / "labels.toml"
         config_path.write_text(config_text)
@@ -66,8 +66,8 @@ class TestLoadLabels_Categories(unittest.TestCase):
         self.assertEqual(len(CONFIGURED_LABELS.priority_labels.labels), 3)
         self.assertEqual(len(CONFIGURED_LABELS.all_labels()), 24)
         for priority_label in CONFIGURED_LABELS.priority_labels.labels:
-            self.assertIsInstance(priority_label, label_types.PriorityLabel)
-        self.assertIsInstance(CONFIGURED_LABELS.scope_labels.not_mapped_label, label_types.NotMappedLabel)
+            self.assertIsInstance(priority_label, pr_labels.PriorityLabel)
+        self.assertIsInstance(CONFIGURED_LABELS.scope_labels.not_mapped_label, pr_labels.NotMappedLabel)
 
     def test_label_names_join_prefix_and_value(
         self,
