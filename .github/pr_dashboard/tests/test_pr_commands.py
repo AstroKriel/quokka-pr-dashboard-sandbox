@@ -2,7 +2,7 @@ import datetime
 import pathlib
 import unittest
 
-from pr_dashboard import interpret_commands
+from pr_dashboard import pr_commands
 from pr_dashboard import load_labels
 from pr_dashboard import pr_context
 
@@ -57,7 +57,7 @@ def run_command(
         user=user,
         text=text,
     )
-    return interpret_commands.plan_update(
+    return pr_commands.plan_update(
         configured_labels=CONFIGURED_LABELS,
         pull_request=pull_request,
         comment=comment,
@@ -66,38 +66,38 @@ def run_command(
     )
 
 
-class TestInterpretCommands_Parse(unittest.TestCase):
+class TestPrCommands_Parse(unittest.TestCase):
 
     def test_plain_comment_is_not_a_command(
         self,
     ):
-        self.assertIsNone(interpret_commands.parse_command("Looks good, thanks!"))
+        self.assertIsNone(pr_commands.parse_command("Looks good, thanks!"))
 
     def test_misspelt_command_is_ignored(
         self,
     ):
-        self.assertIsNone(interpret_commands.parse_command("/accept-reveiw 2026-11-12"))
+        self.assertIsNone(pr_commands.parse_command("/accept-reveiw 2026-11-12"))
 
     def test_command_mid_comment_is_ignored(
         self,
     ):
-        self.assertIsNone(interpret_commands.parse_command("I will run /release-review later"))
+        self.assertIsNone(pr_commands.parse_command("I will run /release-review later"))
 
     def test_command_with_argument_and_extra_lines(
         self,
     ):
-        parsed_command = interpret_commands.parse_command(
+        parsed_command = pr_commands.parse_command(
             "/set-milestone Rewrite RHD module\nThis belongs to the rewrite.",
         )
-        self.assertEqual(parsed_command, (interpret_commands.SET_MILESTONE, "Rewrite RHD module"))
+        self.assertEqual(parsed_command, (pr_commands.SET_MILESTONE, "Rewrite RHD module"))
 
     def test_empty_comment(
         self,
     ):
-        self.assertIsNone(interpret_commands.parse_command("   "))
+        self.assertIsNone(pr_commands.parse_command("   "))
 
 
-class TestInterpretCommands_AcceptReview(unittest.TestCase):
+class TestPrCommands_AcceptReview(unittest.TestCase):
 
     def test_free_review_is_assigned(
         self,
@@ -155,13 +155,13 @@ class TestInterpretCommands_AcceptReview(unittest.TestCase):
         self,
     ):
         update_plan = run_command(text="/accept-review")
-        self.assertEqual(update_plan.reply, f"Use {interpret_commands.ACCEPT_REVIEW.usage}.")
+        self.assertEqual(update_plan.reply, f"Use {pr_commands.ACCEPT_REVIEW.usage}.")
 
     def test_unreadable_date(
         self,
     ):
         update_plan = run_command(text="/accept-review next week")
-        self.assertEqual(update_plan.reply, f"Use {interpret_commands.ACCEPT_REVIEW.usage}.")
+        self.assertEqual(update_plan.reply, f"Use {pr_commands.ACCEPT_REVIEW.usage}.")
 
     def test_past_date(
         self,
@@ -206,7 +206,7 @@ class TestInterpretCommands_AcceptReview(unittest.TestCase):
         self.assertEqual(update_plan, expected_update_plan)
 
 
-class TestInterpretCommands_ReleaseReview(unittest.TestCase):
+class TestPrCommands_ReleaseReview(unittest.TestCase):
 
     def test_reviewer_releases(
         self,
@@ -250,7 +250,7 @@ class TestInterpretCommands_ReleaseReview(unittest.TestCase):
         self.assertEqual(update_plan, pr_context.UpdatePlan(reply="Use `/release-review`."))
 
 
-class TestInterpretCommands_SetPriority(unittest.TestCase):
+class TestPrCommands_SetPriority(unittest.TestCase):
 
     def test_replaces_existing_priority(
         self,
@@ -315,7 +315,7 @@ class TestInterpretCommands_SetPriority(unittest.TestCase):
         self.assertEqual(update_plan, pr_context.UpdatePlan(reply=expected_reply))
 
 
-class TestInterpretCommands_SetMilestone(unittest.TestCase):
+class TestPrCommands_SetMilestone(unittest.TestCase):
 
     def test_matches_title_ignoring_case(
         self,
@@ -364,7 +364,7 @@ class TestInterpretCommands_SetMilestone(unittest.TestCase):
         self.assertEqual(update_plan, pr_context.UpdatePlan(reply="Use `/set-milestone <title|none>`."))
 
 
-class TestInterpretCommands_RecomputeLabels(unittest.TestCase):
+class TestPrCommands_RecomputeLabels(unittest.TestCase):
 
     def test_recomputes_scope_and_size(
         self,
@@ -391,13 +391,13 @@ class TestInterpretCommands_RecomputeLabels(unittest.TestCase):
         self.assertEqual(update_plan, pr_context.UpdatePlan(reply="Use `/recompute-labels`."))
 
 
-class TestInterpretCommands_Help(unittest.TestCase):
+class TestPrCommands_Help(unittest.TestCase):
 
     def test_lists_every_command(
         self,
     ):
         update_plan = run_command(text="/help")
-        for command in interpret_commands.COMMANDS:
+        for command in pr_commands.COMMANDS:
             with self.subTest(command_name=command.name):
                 self.assertIn(f"`{command.name}", update_plan.reply)
 

@@ -6,7 +6,7 @@ import pathlib
 
 from pr_dashboard import compute_labels
 from pr_dashboard import github_api
-from pr_dashboard import interpret_commands
+from pr_dashboard import pr_commands
 from pr_dashboard import label_types
 from pr_dashboard import load_labels
 from pr_dashboard import pr_context
@@ -60,7 +60,7 @@ def run_comment_command(
     if "pull_request" not in event_data["issue"]:
         return
     comment_text = event_data["comment"]["body"]
-    if interpret_commands.parse_command(comment_text) is None:
+    if pr_commands.parse_command(comment_text) is None:
         return
     pr_number = event_data["issue"]["number"]
     commenter_user_name = event_data["comment"]["user"]["login"]
@@ -80,7 +80,7 @@ def run_comment_command(
     )
     open_milestones = github_api.get_open_milestones(repo)
     today = datetime.datetime.now(datetime.timezone.utc).date()
-    update_plan = interpret_commands.plan_update(
+    update_plan = pr_commands.plan_update(
         configured_labels=configured_labels,
         pull_request=pull_request,
         comment=comment,
