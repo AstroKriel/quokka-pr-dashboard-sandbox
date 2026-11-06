@@ -22,15 +22,15 @@ OPEN_MILESTONES = (
 
 def make_pull_request(
     *,
-    assignees: tuple[str, ...] = (),
+    assignee_user_names: tuple[str, ...] = (),
     label_names: tuple[str, ...] = (),
     edited_file_paths: tuple[str, ...] = ("src/hydro/hydro_system.cpp", ),
     num_lines_changed: int = 12,
 ) -> pr_types.PullRequest:
     return pr_types.PullRequest(
         pr_number=1,
-        author="pr-author",
-        assignees=assignees,
+        author_user_name="pr-author",
+        assignee_user_names=assignee_user_names,
         label_names=label_names,
         num_lines_changed=num_lines_changed,
         edited_file_paths=edited_file_paths,
@@ -104,7 +104,7 @@ class TestHandleCommands_AcceptReview(unittest.TestCase):
     ):
         update_plan = run_command(text="/accept-review 2026-11-12")
         expected_update_plan = pr_types.UpdatePlan(
-            assignees_to_add=("maintainer", ),
+            assignee_user_names_to_add=("maintainer", ),
             react=True,
         )
         self.assertEqual(update_plan, expected_update_plan)
@@ -113,12 +113,12 @@ class TestHandleCommands_AcceptReview(unittest.TestCase):
         self,
     ):
         update_plan = run_command(text="/accept-review 2026-11-05")
-        self.assertEqual(update_plan.assignees_to_add, ("maintainer", ))
+        self.assertEqual(update_plan.assignee_user_names_to_add, ("maintainer", ))
 
     def test_same_reviewer_moving_the_date(
         self,
     ):
-        pull_request = make_pull_request(assignees=("maintainer", ))
+        pull_request = make_pull_request(assignee_user_names=("maintainer", ))
         update_plan = run_command(
             text="/accept-review 2026-11-20",
             pull_request=pull_request,
@@ -128,7 +128,7 @@ class TestHandleCommands_AcceptReview(unittest.TestCase):
     def test_second_reviewer_is_refused(
         self,
     ):
-        pull_request = make_pull_request(assignees=("first-reviewer", ))
+        pull_request = make_pull_request(assignee_user_names=("first-reviewer", ))
         update_plan = run_command(
             text="/accept-review 2026-11-12",
             pull_request=pull_request,
@@ -142,7 +142,7 @@ class TestHandleCommands_AcceptReview(unittest.TestCase):
     def test_several_assignees_set_by_hand(
         self,
     ):
-        pull_request = make_pull_request(assignees=("reviewer-a", "reviewer-b"))
+        pull_request = make_pull_request(assignee_user_names=("reviewer-a", "reviewer-b"))
         update_plan = run_command(
             text="/accept-review 2026-11-12",
             pull_request=pull_request,
@@ -207,13 +207,13 @@ class TestHandleCommands_ReleaseReview(unittest.TestCase):
     def test_reviewer_releases(
         self,
     ):
-        pull_request = make_pull_request(assignees=("maintainer", ))
+        pull_request = make_pull_request(assignee_user_names=("maintainer", ))
         update_plan = run_command(
             text="/release-review",
             pull_request=pull_request,
         )
         expected_update_plan = pr_types.UpdatePlan(
-            assignees_to_remove=("maintainer", ),
+            assignee_user_names_to_remove=("maintainer", ),
             react=True,
         )
         self.assertEqual(update_plan, expected_update_plan)
@@ -221,7 +221,7 @@ class TestHandleCommands_ReleaseReview(unittest.TestCase):
     def test_someone_else_cannot_release(
         self,
     ):
-        pull_request = make_pull_request(assignees=("first-reviewer", ))
+        pull_request = make_pull_request(assignee_user_names=("first-reviewer", ))
         update_plan = run_command(
             text="/release-review",
             pull_request=pull_request,
@@ -238,7 +238,7 @@ class TestHandleCommands_ReleaseReview(unittest.TestCase):
     def test_unexpected_argument(
         self,
     ):
-        pull_request = make_pull_request(assignees=("maintainer", ))
+        pull_request = make_pull_request(assignee_user_names=("maintainer", ))
         update_plan = run_command(
             text="/release-review now",
             pull_request=pull_request,

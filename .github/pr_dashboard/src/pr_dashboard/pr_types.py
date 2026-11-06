@@ -19,8 +19,8 @@ class Milestone:
 @dataclasses.dataclass(frozen=True)
 class PullRequest:
     pr_number: int
-    author: str
-    assignees: tuple[str, ...]
+    author_user_name: str
+    assignee_user_names: tuple[str, ...]
     label_names: tuple[str, ...]
     num_lines_changed: int
     edited_file_paths: tuple[str, ...]
@@ -48,8 +48,8 @@ class MilestoneChange:
 class UpdatePlan:
     label_names_to_add: tuple[str, ...] = ()
     label_names_to_remove: tuple[str, ...] = ()
-    assignees_to_add: tuple[str, ...] = ()
-    assignees_to_remove: tuple[str, ...] = ()
+    assignee_user_names_to_add: tuple[str, ...] = ()
+    assignee_user_names_to_remove: tuple[str, ...] = ()
     milestone_change: MilestoneChange | None = None
     reply: str | None = None
     react: bool = False

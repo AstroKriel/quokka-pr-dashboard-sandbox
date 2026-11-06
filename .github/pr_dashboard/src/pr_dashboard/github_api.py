@@ -55,8 +55,8 @@ def get_pull_request(
     )
     return pr_types.PullRequest(
         pr_number=pr_number,
-        author=pr_data["user"]["login"],
-        assignees=tuple(_assignee["login"] for _assignee in pr_data["assignees"]),
+        author_user_name=pr_data["user"]["login"],
+        assignee_user_names=tuple(_assignee_data["login"] for _assignee_data in pr_data["assignees"]),
         label_names=tuple(_label_data["name"] for _label_data in pr_data["labels"]),
         num_lines_changed=pr_data["additions"] + pr_data["deletions"],
         edited_file_paths=edited_file_paths,
@@ -153,15 +153,15 @@ def apply_update_plan(
             method="POST",
             fields={"labels": list(update_plan.label_names_to_add)},
         )
-    if len(update_plan.assignees_to_remove) > 0:
-        assignee_fields = {"assignees": list(update_plan.assignees_to_remove)}
+    if len(update_plan.assignee_user_names_to_remove) > 0:
+        assignee_fields = {"assignees": list(update_plan.assignee_user_names_to_remove)}
         _gh_api(
             endpoint=f"{issue_endpoint}/assignees",
             method="DELETE",
             fields=assignee_fields,
         )
-    if len(update_plan.assignees_to_add) > 0:
-        assignee_fields = {"assignees": list(update_plan.assignees_to_add)}
+    if len(update_plan.assignee_user_names_to_add) > 0:
+        assignee_fields = {"assignees": list(update_plan.assignee_user_names_to_add)}
         _gh_api(
             endpoint=f"{issue_endpoint}/assignees",
             method="POST",

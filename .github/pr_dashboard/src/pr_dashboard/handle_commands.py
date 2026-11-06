@@ -122,14 +122,14 @@ def _mention_list(
 
 
 def _review_taken_reply(
-    assignees: tuple[str, ...],
+    assignee_user_names: tuple[str, ...],
 ) -> str:
-    if len(assignees) == 1:
+    if len(assignee_user_names) == 1:
         verb = "has"
     else:
         verb = "have"
     return (
-        f"{_mention_list(assignees)} {verb} accepted this review. "
+        f"{_mention_list(assignee_user_names)} {verb} accepted this review. "
         "You're welcome to leave a review or comment, or ask them to hand it over."
     )
 
@@ -155,7 +155,7 @@ def _accept_review(
         review_date = None
     if comment.user.role_in_repo not in _ROLES_WITH_WRITE_ACCESS:
         return pr_types.UpdatePlan(reply="Only people with write access can accept a review.")
-    elif comment.user.user_name == pull_request.author:
+    elif comment.user.user_name == pull_request.author_user_name:
         return pr_types.UpdatePlan(reply="You can't accept the review of your own PR.")
     elif review_date is None:
         return _usage_reply("/accept-review")
@@ -163,13 +163,13 @@ def _accept_review(
         return pr_types.UpdatePlan(
             reply=f"The review date has to be today or later. Use {COMMAND_HELPS['/accept-review'].usage}.",
         )
-    elif pull_request.assignees == (comment.user.user_name, ):
+    elif pull_request.assignee_user_names == (comment.user.user_name, ):
         return pr_types.UpdatePlan(react=True)
-    elif len(pull_request.assignees) > 0:
-        return pr_types.UpdatePlan(reply=_review_taken_reply(pull_request.assignees))
+    elif len(pull_request.assignee_user_names) > 0:
+        return pr_types.UpdatePlan(reply=_review_taken_reply(pull_request.assignee_user_names))
     else:
         return pr_types.UpdatePlan(
-            assignees_to_add=(comment.user.user_name, ),
+            assignee_user_names_to_add=(comment.user.user_name, ),
             react=True,
         )
 
@@ -182,15 +182,15 @@ def _release_review(
 ) -> pr_types.UpdatePlan:
     if argument != "":
         return _usage_reply("/release-review")
-    elif comment.user.user_name in pull_request.assignees:
+    elif comment.user.user_name in pull_request.assignee_user_names:
         return pr_types.UpdatePlan(
-            assignees_to_remove=(comment.user.user_name, ),
+            assignee_user_names_to_remove=(comment.user.user_name, ),
             react=True,
         )
-    elif len(pull_request.assignees) > 0:
+    elif len(pull_request.assignee_user_names) > 0:
         return pr_types.UpdatePlan(
             reply=
-            f"{_mention_list(pull_request.assignees)} accepted this review, so only they can release it.",
+            f"{_mention_list(pull_request.assignee_user_names)} accepted this review, so only they can release it.",
         )
     else:
         return pr_types.UpdatePlan(reply="Nobody has accepted this review yet.")
@@ -291,7 +291,7 @@ def handle_comment(
         return None
     command_name, argument = parsed_command
     commenter_is_author_or_triager = (
-        (comment.user.user_name == pull_request.author)
+        (comment.user.user_name == pull_request.author_user_name)
         or (comment.user.role_in_repo in _ROLES_WITH_TRIAGE_ACCESS)
     )
     if command_name == "/help":
