@@ -155,13 +155,13 @@ class TestHandleCommands_AcceptReview(unittest.TestCase):
         self,
     ):
         update_plan = run_command(text="/accept-review")
-        self.assertEqual(update_plan.reply, f"Use {handle_commands.COMMAND_USAGES['/accept-review']}.")
+        self.assertEqual(update_plan.reply, f"Use {handle_commands.COMMAND_HELPS['/accept-review'].usage}.")
 
     def test_unreadable_date(
         self,
     ):
         update_plan = run_command(text="/accept-review next week")
-        self.assertEqual(update_plan.reply, f"Use {handle_commands.COMMAND_USAGES['/accept-review']}.")
+        self.assertEqual(update_plan.reply, f"Use {handle_commands.COMMAND_HELPS['/accept-review'].usage}.")
 
     def test_past_date(
         self,
@@ -385,6 +385,46 @@ class TestHandleCommands_RecomputeLabels(unittest.TestCase):
     ):
         update_plan = run_command(text="/recompute-labels all")
         self.assertEqual(update_plan, pr_types.UpdatePlan(reply="Use `/recompute-labels`."))
+
+
+class TestHandleCommands_Help(unittest.TestCase):
+
+    def test_lists_every_command(
+        self,
+    ):
+        update_plan = run_command(text="/help")
+        for command_name in handle_commands.COMMAND_NAMES:
+            with self.subTest(command_name=command_name):
+                self.assertIn(f"`{command_name}", update_plan.reply)
+
+    def test_fills_in_the_priority_values(
+        self,
+    ):
+        update_plan = run_command(text="/help")
+        self.assertIn("`/set-priority <low|medium|high>`: set this PR's priority", update_plan.reply)
+        self.assertNotIn("{priority_values}", update_plan.reply)
+
+    def test_anyone_can_ask(
+        self,
+    ):
+        update_plan = run_command(
+            text="/help",
+            user_name="passer-by",
+            role_in_repo=pr_types.RoleInRepo.READ,
+        )
+        self.assertTrue(update_plan.reply.startswith("PR dashboard commands:"))
+
+    def test_extra_words_are_ignored(
+        self,
+    ):
+        update_plan = run_command(text="/help me please")
+        self.assertTrue(update_plan.reply.startswith("PR dashboard commands:"))
+
+    def test_changes_nothing(
+        self,
+    ):
+        update_plan = run_command(text="/help")
+        self.assertEqual(update_plan, pr_types.UpdatePlan(reply=update_plan.reply))
 
 
 if __name__ == "__main__":

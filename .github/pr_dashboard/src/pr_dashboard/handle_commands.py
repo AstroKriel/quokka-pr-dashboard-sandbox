@@ -1,3 +1,4 @@
+import dataclasses
 import datetime
 
 from pr_dashboard import compute_labels
@@ -15,13 +16,54 @@ _ROLES_WITH_WRITE_ACCESS = (
     pr_types.RoleInRepo.MAINTAIN,
     pr_types.RoleInRepo.ADMIN,
 )
-COMMAND_NAMES = ("/accept-review", "/release-review", "/set-priority", "/set-milestone", "/recompute-labels")
-COMMAND_USAGES = {
-    "/accept-review": "`/accept-review <YYYY-MM-DD>`, with the date you will review by",
-    "/release-review": "`/release-review`",
-    "/set-milestone": "`/set-milestone <title|none>`",
-    "/recompute-labels": "`/recompute-labels`",
+
+
+@dataclasses.dataclass(frozen=True)
+class CommandHelp:
+    usage: str
+    description: str
+    allowed_users: str
+
+
+COMMAND_HELPS = {
+    "/accept-review":
+    CommandHelp(
+        usage="`/accept-review <YYYY-MM-DD>`",
+        description="take on this PR's review, with the date you will review by",
+        allowed_users="write access",
+    ),
+    "/release-review":
+    CommandHelp(
+        usage="`/release-review`",
+        description="give the review back",
+        allowed_users="the current reviewer",
+    ),
+    "/set-priority":
+    CommandHelp(
+        usage="`/set-priority <{priority_values}>`",
+        description="set this PR's priority",
+        allowed_users="the PR author, or triage access or higher",
+    ),
+    "/set-milestone":
+    CommandHelp(
+        usage="`/set-milestone <title|none>`",
+        description="set or remove this PR's milestone",
+        allowed_users="the PR author, or triage access or higher",
+    ),
+    "/recompute-labels":
+    CommandHelp(
+        usage="`/recompute-labels`",
+        description="recalculate the scope and size labels",
+        allowed_users="the PR author, or triage access or higher",
+    ),
+    "/help":
+    CommandHelp(
+        usage="`/help`",
+        description="show this list",
+        allowed_users="anyone",
+    ),
 }
+COMMAND_NAMES = tuple(COMMAND_HELPS)
 
 
 def parse_command(
@@ -40,10 +82,33 @@ def parse_command(
         return command_name, first_line_words[1].strip()
 
 
+def _format_usage(
+    *,
+    command_name: str,
+    priority_labels: label_types.PriorityLabels,
+) -> str:
+    priority_values = "|".join(_priority_label.value for _priority_label in priority_labels.labels)
+    return COMMAND_HELPS[command_name].usage.format(priority_values=priority_values)
+
+
 def _usage_reply(
     command_name: str,
 ) -> pr_types.UpdatePlan:
-    return pr_types.UpdatePlan(reply=f"Use {COMMAND_USAGES[command_name]}.")
+    return pr_types.UpdatePlan(reply=f"Use {COMMAND_HELPS[command_name].usage}.")
+
+
+def _help_reply(
+    priority_labels: label_types.PriorityLabels,
+) -> pr_types.UpdatePlan:
+    help_lines = ["PR dashboard commands:"]
+    for command_name, command_help in COMMAND_HELPS.items():
+        usage = _format_usage(
+            command_name=command_name,
+            priority_labels=priority_labels,
+        )
+        help_line = f"- {usage}: {command_help.description} ({command_help.allowed_users})"
+        help_lines.append(help_line)
+    return pr_types.UpdatePlan(reply="\n".join(help_lines))
 
 
 def _mention_list(
@@ -96,7 +161,7 @@ def _accept_review(
         return _usage_reply("/accept-review")
     elif review_date < today:
         return pr_types.UpdatePlan(
-            reply=f"The review date has to be today or later. Use {COMMAND_USAGES['/accept-review']}.",
+            reply=f"The review date has to be today or later. Use {COMMAND_HELPS['/accept-review'].usage}.",
         )
     elif pull_request.assignees == (comment.user.user_name, ):
         return pr_types.UpdatePlan(react=True)
@@ -139,8 +204,11 @@ def _set_priority(
 ) -> pr_types.UpdatePlan:
     priority_label = priority_labels.get_label(argument)
     if priority_label is None:
-        priority_values = "|".join(_priority_label.value for _priority_label in priority_labels.labels)
-        return pr_types.UpdatePlan(reply=f"Use `/set-priority <{priority_values}>`.")
+        usage = _format_usage(
+            command_name="/set-priority",
+            priority_labels=priority_labels,
+        )
+        return pr_types.UpdatePlan(reply=f"Use {usage}.")
     wanted_label_name = priority_label.label_name
     label_names_to_remove = tuple(
         _label_name for _label_name in pull_request.label_names
@@ -226,7 +294,9 @@ def handle_comment(
         (comment.user.user_name == pull_request.author)
         or (comment.user.role_in_repo in _ROLES_WITH_TRIAGE_ACCESS)
     )
-    if command_name == "/accept-review":
+    if command_name == "/help":
+        return _help_reply(configured_labels.priority_labels)
+    elif command_name == "/accept-review":
         return _accept_review(
             pull_request=pull_request,
             comment=comment,
