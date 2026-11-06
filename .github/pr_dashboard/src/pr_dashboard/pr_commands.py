@@ -184,19 +184,21 @@ def _accept_review(
     pull_request: pr_context.PullRequest,
     comment: pr_context.Comment,
     argument: str,
-    today: datetime.date,
 ) -> pr_context.UpdatePlan:
     try:
         review_date = datetime.date.fromisoformat(argument)
     except ValueError:
         review_date = None
+    today_in_utc = datetime.datetime.now(datetime.timezone.utc).date()
+    # a day of slack, so a reviewer whose day is behind UTC can give their own today's date
+    earliest_review_date = today_in_utc - datetime.timedelta(days=1)
     if comment.user.role_in_repo not in _ROLES_WITH_WRITE_ACCESS:
         return pr_context.UpdatePlan(reply="Only maintainers (anyone with write access) can accept a review.")
     elif comment.user.user_name == pull_request.author_user_name:
         return pr_context.UpdatePlan(reply="You can't accept the review of your own PR.")
     elif review_date is None:
         return _usage_reply(ACCEPT_REVIEW)
-    elif review_date < today:
+    elif review_date < earliest_review_date:
         return pr_context.UpdatePlan(
             reply=f"The review date has to be today or later. Use {ACCEPT_REVIEW.usage}.",
         )
@@ -322,7 +324,6 @@ def plan_update_from_comment(
     pull_request: pr_context.PullRequest,
     comment: pr_context.Comment,
     open_milestones: tuple[pr_context.Milestone, ...],
-    today: datetime.date,
 ) -> pr_context.UpdatePlan | None:
     parsed_command = parse_command(comment.text)
     if parsed_command is None:
@@ -339,7 +340,6 @@ def plan_update_from_comment(
             pull_request=pull_request,
             comment=comment,
             argument=argument,
-            today=today,
         )
     elif command == RELEASE_REVIEW:
         return _release_review(

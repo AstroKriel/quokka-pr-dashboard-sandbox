@@ -7,7 +7,12 @@ from pr_dashboard import pr_commands
 from pr_dashboard import pr_context
 
 CONFIGURED_LABELS = load_labels.load_configured_labels(pathlib.Path(__file__).parents[1] / "labels.toml")
-TODAY = datetime.date(2026, 11, 5)
+TODAY_IN_UTC = datetime.datetime.now(datetime.timezone.utc).date()
+TODAY = TODAY_IN_UTC.isoformat()
+YESTERDAY = (TODAY_IN_UTC - datetime.timedelta(days=1)).isoformat()
+TWO_DAYS_AGO = (TODAY_IN_UTC - datetime.timedelta(days=2)).isoformat()
+NEXT_WEEK = (TODAY_IN_UTC + datetime.timedelta(days=7)).isoformat()
+IN_TWO_WEEKS = (TODAY_IN_UTC + datetime.timedelta(days=14)).isoformat()
 OPEN_MILESTONES = (
     pr_context.Milestone(
         milestone_number=6,
@@ -62,7 +67,6 @@ def run_command(
         pull_request=pull_request,
         comment=comment,
         open_milestones=open_milestones,
-        today=TODAY,
     )
 
 
@@ -102,7 +106,7 @@ class TestPrCommands_AcceptReview(unittest.TestCase):
     def test_free_review_is_assigned(
         self,
     ):
-        update_plan_from_comment = run_command(text="/accept-review 2026-11-12")
+        update_plan_from_comment = run_command(text=f"/accept-review {NEXT_WEEK}")
         expected_update_plan = pr_context.UpdatePlan(
             assignee_user_names_to_add=("maintainer", ),
             react=True,
@@ -112,7 +116,13 @@ class TestPrCommands_AcceptReview(unittest.TestCase):
     def test_today_is_allowed(
         self,
     ):
-        update_plan_from_comment = run_command(text="/accept-review 2026-11-05")
+        update_plan_from_comment = run_command(text=f"/accept-review {TODAY}")
+        self.assertEqual(update_plan_from_comment.assignee_user_names_to_add, ("maintainer", ))
+
+    def test_yesterday_is_allowed_for_reviewers_behind_utc(
+        self,
+    ):
+        update_plan_from_comment = run_command(text=f"/accept-review {YESTERDAY}")
         self.assertEqual(update_plan_from_comment.assignee_user_names_to_add, ("maintainer", ))
 
     def test_same_reviewer_moving_the_date(
@@ -120,7 +130,7 @@ class TestPrCommands_AcceptReview(unittest.TestCase):
     ):
         pull_request = make_pull_request(assignee_user_names=("maintainer", ))
         update_plan_from_comment = run_command(
-            text="/accept-review 2026-11-20",
+            text=f"/accept-review {IN_TWO_WEEKS}",
             pull_request=pull_request,
         )
         self.assertEqual(update_plan_from_comment, pr_context.UpdatePlan(react=True))
@@ -130,7 +140,7 @@ class TestPrCommands_AcceptReview(unittest.TestCase):
     ):
         pull_request = make_pull_request(assignee_user_names=("first-reviewer", ))
         update_plan_from_comment = run_command(
-            text="/accept-review 2026-11-12",
+            text=f"/accept-review {NEXT_WEEK}",
             pull_request=pull_request,
         )
         expected_reply = (
@@ -144,7 +154,7 @@ class TestPrCommands_AcceptReview(unittest.TestCase):
     ):
         pull_request = make_pull_request(assignee_user_names=("reviewer-a", "reviewer-b"))
         update_plan_from_comment = run_command(
-            text="/accept-review 2026-11-12",
+            text=f"/accept-review {NEXT_WEEK}",
             pull_request=pull_request,
         )
         self.assertTrue(
@@ -167,16 +177,16 @@ class TestPrCommands_AcceptReview(unittest.TestCase):
     def test_past_date(
         self,
     ):
-        update_plan_from_comment = run_command(text="/accept-review 2026-11-04")
+        update_plan_from_comment = run_command(text=f"/accept-review {TWO_DAYS_AGO}")
         self.assertTrue(
-            update_plan_from_comment.reply.startswith("The review date has to be today or later.")
+            update_plan_from_comment.reply.startswith("The review date has to be today or later."),
         )
 
     def test_without_write_access(
         self,
     ):
         update_plan_from_comment = run_command(
-            text="/accept-review 2026-11-12",
+            text=f"/accept-review {NEXT_WEEK}",
             user_name="contributor",
             role_in_repo=pr_context.RoleInRepo.READ,
         )
@@ -189,7 +199,7 @@ class TestPrCommands_AcceptReview(unittest.TestCase):
         self,
     ):
         update_plan_from_comment = run_command(
-            text="/accept-review 2026-11-12",
+            text=f"/accept-review {NEXT_WEEK}",
             user_name="triager",
             role_in_repo=pr_context.RoleInRepo.TRIAGE,
         )
@@ -202,7 +212,7 @@ class TestPrCommands_AcceptReview(unittest.TestCase):
         self,
     ):
         update_plan_from_comment = run_command(
-            text="/accept-review 2026-11-12",
+            text=f"/accept-review {NEXT_WEEK}",
             user_name="pr-author",
         )
         expected_update_plan = pr_context.UpdatePlan(reply="You can't accept the review of your own PR.")
@@ -241,7 +251,8 @@ class TestPrCommands_ReleaseReview(unittest.TestCase):
     ):
         update_plan_from_comment = run_command(text="/release-review")
         self.assertEqual(
-            update_plan_from_comment, pr_context.UpdatePlan(reply="Nobody has accepted this review yet.")
+            update_plan_from_comment,
+            pr_context.UpdatePlan(reply="Nobody has accepted this review yet."),
         )
 
     def test_unexpected_argument(
@@ -287,7 +298,8 @@ class TestPrCommands_SetPriority(unittest.TestCase):
     ):
         update_plan_from_comment = run_command(text="/set-priority urgent")
         self.assertEqual(
-            update_plan_from_comment, pr_context.UpdatePlan(reply="Use `/set-priority <low|medium|high>`.")
+            update_plan_from_comment,
+            pr_context.UpdatePlan(reply="Use `/set-priority <low|medium|high>`."),
         )
 
     def test_author_with_read_access_can_set(
@@ -369,7 +381,8 @@ class TestPrCommands_SetMilestone(unittest.TestCase):
     ):
         update_plan_from_comment = run_command(text="/set-milestone")
         self.assertEqual(
-            update_plan_from_comment, pr_context.UpdatePlan(reply="Use `/set-milestone <title|none>`.")
+            update_plan_from_comment,
+            pr_context.UpdatePlan(reply="Use `/set-milestone <title|none>`."),
         )
 
 
@@ -415,7 +428,8 @@ class TestPrCommands_Help(unittest.TestCase):
     ):
         update_plan_from_comment = run_command(text="/help")
         self.assertIn(
-            "`/set-priority <low|medium|high>`: set this PR's priority", update_plan_from_comment.reply
+            "`/set-priority <low|medium|high>`: set this PR's priority",
+            update_plan_from_comment.reply,
         )
         self.assertNotIn("{priority_values}", update_plan_from_comment.reply)
 
@@ -440,7 +454,8 @@ class TestPrCommands_Help(unittest.TestCase):
     ):
         update_plan_from_comment = run_command(text="/help")
         self.assertEqual(
-            update_plan_from_comment, pr_context.UpdatePlan(reply=update_plan_from_comment.reply)
+            update_plan_from_comment,
+            pr_context.UpdatePlan(reply=update_plan_from_comment.reply),
         )
 
 

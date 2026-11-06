@@ -1,6 +1,5 @@
 import argparse
 import dataclasses
-import datetime
 import json
 import pathlib
 
@@ -65,30 +64,28 @@ def run_command_from_comment(
     comment_text = event_data["comment"]["body"]
     if pr_commands.parse_command(comment_text) is None:
         return
-    pr_number = event_data["issue"]["number"]
-    commenter_user_name = event_data["comment"]["user"]["login"]
+    user_name = event_data["comment"]["user"]["login"]
     user = github_api.get_user(
         repo=repo,
-        user_name=commenter_user_name,
+        user_name=user_name,
     )
     comment = pr_context.Comment(
         comment_id=event_data["comment"]["id"],
         user=user,
         text=comment_text,
     )
-    configured_labels = load_labels.load_configured_labels(LABELS_TOML_PATH)
+    pr_number = event_data["issue"]["number"]
     pull_request = github_api.get_pull_request(
         repo=repo,
         pr_number=pr_number,
     )
     open_milestones = github_api.get_open_milestones(repo)
-    today = datetime.datetime.now(datetime.timezone.utc).date()
+    configured_labels = load_labels.load_configured_labels(LABELS_TOML_PATH)
     update_plan_from_comment = pr_commands.plan_update_from_comment(
         configured_labels=configured_labels,
         pull_request=pull_request,
         comment=comment,
         open_milestones=open_milestones,
-        today=today,
     )
     print_update_plan(update_plan_from_comment)
     github_api.apply_update_plan(
