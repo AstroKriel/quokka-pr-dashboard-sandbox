@@ -38,14 +38,14 @@ def _compute_size_label_name(
     configured_labels: label_types.ConfiguredLabels,
     num_lines_changed: int,
 ) -> str:
-    sorted_size_labels = sorted(
+    increasing_size_labels = sorted(
         configured_labels.size_labels.labels,
         key=lambda _size_label: _size_label.min_num_lines,
     )
-    size_label_name = sorted_size_labels[0].label_name
-    for size_label in sorted_size_labels:
-        if num_lines_changed >= size_label.min_num_lines:
-            size_label_name = size_label.label_name
+    size_label_name = increasing_size_labels[0].label_name
+    for next_size_label in increasing_size_labels:
+        if num_lines_changed >= next_size_label.min_num_lines:
+            size_label_name = next_size_label.label_name
     return size_label_name
 
 
