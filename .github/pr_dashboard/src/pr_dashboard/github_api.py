@@ -12,7 +12,13 @@ def _gh_api(
     fields: dict | None = None,
     paginate: bool = False,
 ):
-    cmd_parts = ["gh", "api", "--method", method, endpoint]
+    cmd_parts = [
+        "gh",
+        "api",
+        "--method",
+        method,
+        endpoint,
+    ]
     if paginate:
         cmd_parts.append("--paginate")
         cmd_parts.append("--slurp")
@@ -111,7 +117,11 @@ def create_label(
     color: str,
     description: str,
 ) -> None:
-    label_fields = {"name": name, "color": color, "description": description}
+    label_fields = {
+        "name": name,
+        "color": color,
+        "description": description,
+    }
     _gh_api(
         endpoint=f"repos/{repo}/labels",
         method="POST",
@@ -126,7 +136,10 @@ def update_label(
     color: str,
     description: str,
 ) -> None:
-    label_fields = {"color": color, "description": description}
+    label_fields = {
+        "color": color,
+        "description": description,
+    }
     _gh_api(
         endpoint=f"repos/{repo}/labels/{_quote(name)}",
         method="PATCH",

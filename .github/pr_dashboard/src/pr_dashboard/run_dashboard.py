@@ -148,7 +148,14 @@ def sync_label_set(
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=["label-pr", "handle-comment", "sync-label-set"])
+    parser.add_argument(
+        "action",
+        choices=[
+            "label-pr",
+            "handle-comment",
+            "sync-label-set",
+        ],
+    )
     parser.add_argument("--repo", default=os.environ.get("GITHUB_REPOSITORY"))
     parser.add_argument("--pr", type=int)
     parser.add_argument("--event-path", default=os.environ.get("GITHUB_EVENT_PATH"))
