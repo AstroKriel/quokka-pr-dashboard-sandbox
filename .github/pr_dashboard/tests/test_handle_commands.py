@@ -89,7 +89,7 @@ class TestHandleCommands_Parse(unittest.TestCase):
         parsed_command = handle_commands.parse_command(
             "/set-milestone Rewrite RHD module\nThis belongs to the rewrite.",
         )
-        self.assertEqual(parsed_command, ("/set-milestone", "Rewrite RHD module"))
+        self.assertEqual(parsed_command, (handle_commands.SET_MILESTONE, "Rewrite RHD module"))
 
     def test_empty_comment(
         self,
@@ -155,13 +155,13 @@ class TestHandleCommands_AcceptReview(unittest.TestCase):
         self,
     ):
         update_plan = run_command(text="/accept-review")
-        self.assertEqual(update_plan.reply, f"Use {handle_commands.COMMAND_HELPS['/accept-review'].usage}.")
+        self.assertEqual(update_plan.reply, f"Use {handle_commands.ACCEPT_REVIEW.usage}.")
 
     def test_unreadable_date(
         self,
     ):
         update_plan = run_command(text="/accept-review next week")
-        self.assertEqual(update_plan.reply, f"Use {handle_commands.COMMAND_HELPS['/accept-review'].usage}.")
+        self.assertEqual(update_plan.reply, f"Use {handle_commands.ACCEPT_REVIEW.usage}.")
 
     def test_past_date(
         self,
@@ -178,7 +178,7 @@ class TestHandleCommands_AcceptReview(unittest.TestCase):
             role_in_repo=pr_types.RoleInRepo.READ,
         )
         expected_update_plan = pr_types.UpdatePlan(
-            reply="Only maintainers (anyone with write access) can accept a review."
+            reply="Only maintainers (anyone with write access) can accept a review.",
         )
         self.assertEqual(update_plan, expected_update_plan)
 
@@ -191,7 +191,7 @@ class TestHandleCommands_AcceptReview(unittest.TestCase):
             role_in_repo=pr_types.RoleInRepo.TRIAGE,
         )
         expected_update_plan = pr_types.UpdatePlan(
-            reply="Only maintainers (anyone with write access) can accept a review."
+            reply="Only maintainers (anyone with write access) can accept a review.",
         )
         self.assertEqual(update_plan, expected_update_plan)
 
@@ -397,9 +397,9 @@ class TestHandleCommands_Help(unittest.TestCase):
         self,
     ):
         update_plan = run_command(text="/help")
-        for command_name in handle_commands.COMMAND_NAMES:
-            with self.subTest(command_name=command_name):
-                self.assertIn(f"`{command_name}", update_plan.reply)
+        for command in handle_commands.COMMANDS:
+            with self.subTest(command_name=command.name):
+                self.assertIn(f"`{command.name}", update_plan.reply)
 
     def test_fills_in_the_priority_values(
         self,
