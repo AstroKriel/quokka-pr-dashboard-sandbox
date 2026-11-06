@@ -78,7 +78,7 @@ def _author_or_triage_only_reply(
     )
 
 
-def accept_review(
+def _accept_review(
     pull_request: pr_types.PullRequest,
     comment: pr_types.Comment,
     argument: str,
@@ -109,7 +109,7 @@ def accept_review(
         )
 
 
-def release_review(
+def _release_review(
     pull_request: pr_types.PullRequest,
     comment: pr_types.Comment,
     argument: str,
@@ -130,7 +130,7 @@ def release_review(
         return pr_types.UpdatePlan(reply="Nobody has accepted this review yet.")
 
 
-def set_priority(
+def _set_priority(
     pull_request: pr_types.PullRequest,
     argument: str,
 ) -> pr_types.UpdatePlan:
@@ -154,7 +154,7 @@ def set_priority(
     )
 
 
-def set_milestone(
+def _set_milestone(
     open_milestones: tuple[pr_types.Milestone, ...],
     argument: str,
 ) -> pr_types.UpdatePlan:
@@ -221,14 +221,14 @@ def handle_comment(
         or (comment.user.role_in_repo in ROLES_WITH_TRIAGE_ACCESS)
     )
     if command_name == "/accept-review":
-        return accept_review(pull_request, comment, argument, today)
+        return _accept_review(pull_request, comment, argument, today)
     elif command_name == "/release-review":
-        return release_review(pull_request, comment, argument)
+        return _release_review(pull_request, comment, argument)
     elif not commenter_is_author_or_triager:
         return _author_or_triage_only_reply(command_name)
     elif command_name == "/set-priority":
-        return set_priority(pull_request, argument)
+        return _set_priority(pull_request, argument)
     elif command_name == "/set-milestone":
-        return set_milestone(open_milestones, argument)
+        return _set_milestone(open_milestones, argument)
     else:
         return recompute_labels(configured_labels, pull_request, argument)

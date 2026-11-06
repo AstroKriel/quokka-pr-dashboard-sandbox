@@ -10,7 +10,7 @@ def _path_matches_any(
     return any(fnmatch.fnmatchcase(file_path, _pattern) for _pattern in patterns)
 
 
-def compute_scope_label_names(
+def _compute_scope_label_names(
     configured_labels: label_types.ConfiguredLabels,
     file_paths: tuple[str, ...],
 ) -> set[str]:
@@ -28,7 +28,7 @@ def compute_scope_label_names(
     return scope_label_names
 
 
-def compute_size_label_name(
+def _compute_size_label_name(
     configured_labels: label_types.ConfiguredLabels,
     num_lines_changed: int,
 ) -> str:
@@ -49,8 +49,8 @@ def compute_label_changes(
     file_paths: tuple[str, ...],
     num_lines_changed: int,
 ) -> label_types.LabelChanges:
-    wanted_label_names = compute_scope_label_names(configured_labels, file_paths)
-    size_label_name = compute_size_label_name(configured_labels, num_lines_changed)
+    wanted_label_names = _compute_scope_label_names(configured_labels, file_paths)
+    size_label_name = _compute_size_label_name(configured_labels, num_lines_changed)
     wanted_label_names.add(size_label_name)
     priority_is_set = any(
         _label_name.startswith(label_types.PRIORITY_PREFIX) for _label_name in current_label_names

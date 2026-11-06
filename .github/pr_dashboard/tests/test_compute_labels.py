@@ -13,7 +13,7 @@ class TestComputeLabels_Scope(unittest.TestCase):
     def test_hydro_file(
         self,
     ):
-        scope_label_names = compute_labels.compute_scope_label_names(
+        scope_label_names = compute_labels._compute_scope_label_names(
             CONFIGURED_LABELS,
             ("src/hydro/HLLC.hpp", ),
         )
@@ -22,7 +22,7 @@ class TestComputeLabels_Scope(unittest.TestCase):
     def test_mhd_file_inside_hydro_gets_both(
         self,
     ):
-        scope_label_names = compute_labels.compute_scope_label_names(
+        scope_label_names = compute_labels._compute_scope_label_names(
             CONFIGURED_LABELS,
             ("src/hydro/HLLD.hpp", ),
         )
@@ -36,7 +36,7 @@ class TestComputeLabels_Scope(unittest.TestCase):
             "src/problems/RadDust/test_rad_dust.cpp",
             "src/problems/ParticleSink/test_particle_sink.cpp",
         )
-        scope_label_names = compute_labels.compute_scope_label_names(CONFIGURED_LABELS, file_paths)
+        scope_label_names = compute_labels._compute_scope_label_names(CONFIGURED_LABELS, file_paths)
         expected_label_names = {
             "scope/MHD",
             "scope/radiation",
@@ -50,34 +50,34 @@ class TestComputeLabels_Scope(unittest.TestCase):
         self,
     ):
         file_paths = ("inputs/MHDBlast.toml", "inputs/alfven_wave_linear_regression.toml")
-        scope_label_names = compute_labels.compute_scope_label_names(CONFIGURED_LABELS, file_paths)
+        scope_label_names = compute_labels._compute_scope_label_names(CONFIGURED_LABELS, file_paths)
         self.assertEqual(scope_label_names, {"scope/MHD", "scope/tests"})
 
     def test_problem_with_no_physics_area_is_tests(
         self,
     ):
         file_paths = ("src/problems/SN/testSN.cpp", "inputs/SN.toml", "extern/Toro/e1rpex.ini")
-        scope_label_names = compute_labels.compute_scope_label_names(CONFIGURED_LABELS, file_paths)
+        scope_label_names = compute_labels._compute_scope_label_names(CONFIGURED_LABELS, file_paths)
         self.assertEqual(scope_label_names, {"scope/tests"})
 
     def test_unknown_file_is_not_mapped(
         self,
     ):
         file_paths = ("src/newmodule/thing.hpp", "src/hydro/HLLC.hpp")
-        scope_label_names = compute_labels.compute_scope_label_names(CONFIGURED_LABELS, file_paths)
+        scope_label_names = compute_labels._compute_scope_label_names(CONFIGURED_LABELS, file_paths)
         self.assertEqual(scope_label_names, {"scope/not_mapped", "scope/hydro"})
 
     def test_build_files_and_libraries(
         self,
     ):
         file_paths = ("src/CMakeLists.txt", "src/problems/ProblemHelpers.cmake", "extern/amrex")
-        scope_label_names = compute_labels.compute_scope_label_names(CONFIGURED_LABELS, file_paths)
+        scope_label_names = compute_labels._compute_scope_label_names(CONFIGURED_LABELS, file_paths)
         self.assertEqual(scope_label_names, {"scope/build", "scope/tests"})
 
     def test_problem_registry_is_tests(
         self,
     ):
-        scope_label_names = compute_labels.compute_scope_label_names(
+        scope_label_names = compute_labels._compute_scope_label_names(
             CONFIGURED_LABELS,
             ("src/problems/CMakeLists.txt", ),
         )
@@ -86,7 +86,7 @@ class TestComputeLabels_Scope(unittest.TestCase):
     def test_scripts_are_tools(
         self,
     ):
-        scope_label_names = compute_labels.compute_scope_label_names(
+        scope_label_names = compute_labels._compute_scope_label_names(
             CONFIGURED_LABELS,
             ("scripts/python/prune_checkpoints.py", ),
         )
@@ -96,7 +96,7 @@ class TestComputeLabels_Scope(unittest.TestCase):
         self,
     ):
         file_paths = (".github/workflows/cmake.yml", "docs/index.md", "README.md")
-        scope_label_names = compute_labels.compute_scope_label_names(CONFIGURED_LABELS, file_paths)
+        scope_label_names = compute_labels._compute_scope_label_names(CONFIGURED_LABELS, file_paths)
         self.assertEqual(scope_label_names, {"scope/CI", "scope/documentation"})
 
     def test_every_repository_file_has_a_scope(
@@ -114,7 +114,7 @@ class TestComputeLabels_Scope(unittest.TestCase):
         not_mapped_label_name = CONFIGURED_LABELS.not_mapped_label.name
         not_mapped_paths = [
             _file_path for _file_path in file_paths if not_mapped_label_name in
-            compute_labels.compute_scope_label_names(CONFIGURED_LABELS, (_file_path, ))
+            compute_labels._compute_scope_label_names(CONFIGURED_LABELS, (_file_path, ))
         ]
         self.assertEqual(not_mapped_paths, [], "Add these paths to a scope in labels.toml")
 
@@ -139,7 +139,7 @@ class TestComputeLabels_Size(unittest.TestCase):
         for num_lines_changed, expected_size in expected_sizes.items():
             with self.subTest(num_lines_changed=num_lines_changed):
                 self.assertEqual(
-                    compute_labels.compute_size_label_name(CONFIGURED_LABELS, num_lines_changed),
+                    compute_labels._compute_size_label_name(CONFIGURED_LABELS, num_lines_changed),
                     expected_size,
                 )
 
