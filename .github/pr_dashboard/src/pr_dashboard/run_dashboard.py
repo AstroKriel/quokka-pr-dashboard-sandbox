@@ -39,17 +39,17 @@ def label_pr(
         repo=repo,
         pr_number=pr_number,
     )
-    update_plan = pr_labels.plan_update(
+    update_plan_from_pr = pr_labels.plan_update_from_pr(
         configured_labels=configured_labels,
         pull_request=pull_request,
     )
-    print_update_plan(update_plan)
+    print_update_plan(update_plan_from_pr)
     if not dry_run:
         github_api.apply_update_plan(
             repo=repo,
             pr_number=pr_number,
             comment_id=None,
-            update_plan=update_plan,
+            update_plan=update_plan_from_pr,
         )
 
 
@@ -83,19 +83,19 @@ def run_comment_command(
     )
     open_milestones = github_api.get_open_milestones(repo)
     today = datetime.datetime.now(datetime.timezone.utc).date()
-    update_plan = pr_commands.plan_update(
+    update_plan_from_comment = pr_commands.plan_update_from_comment(
         configured_labels=configured_labels,
         pull_request=pull_request,
         comment=comment,
         open_milestones=open_milestones,
         today=today,
     )
-    print_update_plan(update_plan)
+    print_update_plan(update_plan_from_comment)
     github_api.apply_update_plan(
         repo=repo,
         pr_number=pr_number,
         comment_id=comment.comment_id,
-        update_plan=update_plan,
+        update_plan=update_plan_from_comment,
     )
 
 

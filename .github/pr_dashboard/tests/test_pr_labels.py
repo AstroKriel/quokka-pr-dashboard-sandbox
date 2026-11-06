@@ -195,7 +195,7 @@ class TestPrLabels_UpdatePlan(unittest.TestCase):
             num_lines_changed=40,
             edited_file_paths=("src/io/plotfile.cpp", ),
         )
-        update_plan = pr_labels.plan_update(
+        update_plan_from_pr = pr_labels.plan_update_from_pr(
             configured_labels=CONFIGURED_LABELS,
             pull_request=pull_request,
         )
@@ -203,7 +203,7 @@ class TestPrLabels_UpdatePlan(unittest.TestCase):
             label_names_to_add=("priority/medium", "scope/IO", "size/M"),
             label_names_to_remove=("scope/radiation", ),
         )
-        self.assertEqual(update_plan, expected_update_plan)
+        self.assertEqual(update_plan_from_pr, expected_update_plan)
 
 
 if __name__ == "__main__":

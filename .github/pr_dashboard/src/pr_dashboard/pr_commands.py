@@ -304,11 +304,11 @@ def _recompute_labels(
 ) -> pr_context.UpdatePlan:
     if argument != "":
         return _usage_reply(RECOMPUTE_LABELS)
-    label_update_plan = pr_labels.plan_update(
+    update_plan_from_pr = pr_labels.plan_update_from_pr(
         configured_labels=configured_labels,
         pull_request=pull_request,
     )
-    return dataclasses.replace(label_update_plan, react=True)
+    return dataclasses.replace(update_plan_from_pr, react=True)
 
 
 ##
@@ -316,7 +316,7 @@ def _recompute_labels(
 ##
 
 
-def plan_update(
+def plan_update_from_comment(
     *,
     configured_labels: pr_labels.ConfiguredLabels,
     pull_request: pr_context.PullRequest,
@@ -367,4 +367,4 @@ def plan_update(
             argument=argument,
         )
     else:
-        raise ValueError(f"`plan_update` has no branch for command `{command.name}`.")
+        raise ValueError(f"`plan_update_from_comment` has no branch for command `{command.name}`.")

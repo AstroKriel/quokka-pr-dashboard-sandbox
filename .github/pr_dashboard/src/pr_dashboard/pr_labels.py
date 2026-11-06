@@ -210,7 +210,7 @@ def _compute_label_changes(
 ##
 
 
-def plan_update(
+def plan_update_from_pr(
     *,
     configured_labels: ConfiguredLabels,
     pull_request: pr_context.PullRequest,
