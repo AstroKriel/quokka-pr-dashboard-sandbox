@@ -52,8 +52,8 @@ def _compute_size_label_name(
 def _check_label_is_stale(
     *,
     configured_labels: label_types.ConfiguredLabels,
-    label_name: str,
     computed_label_names: set[str],
+    label_name: str,
 ) -> bool:
     label_is_managed_by_tool = (
         configured_labels.scope_labels.check_has_prefix(label_name)
@@ -87,8 +87,8 @@ def compute_label_changes(
     label_names_to_remove = sorted(
         _label_name for _label_name in current_label_names if _check_label_is_stale(
             configured_labels=configured_labels,
-            label_name=_label_name,
             computed_label_names=computed_label_names,
+            label_name=_label_name,
         )
     )
     return label_types.LabelChanges(
