@@ -1,3 +1,4 @@
+import http
 import json
 import subprocess
 import urllib.parse
@@ -8,7 +9,7 @@ from pr_dashboard import pr_types
 def _gh_api(
     *,
     endpoint: str,
-    method: str = "GET",
+    method: http.HTTPMethod = http.HTTPMethod.GET,
     fields: dict | None = None,
     paginate: bool = False,
 ):
@@ -124,7 +125,7 @@ def create_label(
     }
     _gh_api(
         endpoint=f"repos/{repo}/labels",
-        method="POST",
+        method=http.HTTPMethod.POST,
         fields=label_fields,
     )
 
@@ -142,7 +143,7 @@ def update_label(
     }
     _gh_api(
         endpoint=f"repos/{repo}/labels/{_quote(name)}",
-        method="PATCH",
+        method=http.HTTPMethod.PATCH,
         fields=label_fields,
     )
 
@@ -159,44 +160,44 @@ def apply_update_plan(
     for label_name in update_plan.label_names_to_remove:
         _gh_api(
             endpoint=f"{issue_endpoint}/labels/{_quote(label_name)}",
-            method="DELETE",
+            method=http.HTTPMethod.DELETE,
         )
     if len(update_plan.label_names_to_add) > 0:
         _gh_api(
             endpoint=f"{issue_endpoint}/labels",
-            method="POST",
+            method=http.HTTPMethod.POST,
             fields={"labels": list(update_plan.label_names_to_add)},
         )
     if len(update_plan.assignee_user_names_to_remove) > 0:
         assignee_fields = {"assignees": list(update_plan.assignee_user_names_to_remove)}
         _gh_api(
             endpoint=f"{issue_endpoint}/assignees",
-            method="DELETE",
+            method=http.HTTPMethod.DELETE,
             fields=assignee_fields,
         )
     if len(update_plan.assignee_user_names_to_add) > 0:
         assignee_fields = {"assignees": list(update_plan.assignee_user_names_to_add)}
         _gh_api(
             endpoint=f"{issue_endpoint}/assignees",
-            method="POST",
+            method=http.HTTPMethod.POST,
             fields=assignee_fields,
         )
     if update_plan.milestone_change is not None:
         milestone_fields = {"milestone": update_plan.milestone_change.milestone_number}
         _gh_api(
             endpoint=issue_endpoint,
-            method="PATCH",
+            method=http.HTTPMethod.PATCH,
             fields=milestone_fields,
         )
     if update_plan.reply is not None:
         _gh_api(
             endpoint=f"{issue_endpoint}/comments",
-            method="POST",
+            method=http.HTTPMethod.POST,
             fields={"body": update_plan.reply},
         )
     if update_plan.react and (comment_id is not None):
         _gh_api(
             endpoint=f"repos/{repo}/issues/comments/{comment_id}/reactions",
-            method="POST",
+            method=http.HTTPMethod.POST,
             fields={"content": "+1"},
         )
