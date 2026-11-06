@@ -26,6 +26,7 @@ jobs:
       - name: Set the scope, size and default priority labels
         env:
           GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PYTHONPATH: .github/pr_dashboard/src
-        run: python3 -m pr_dashboard.run_dashboard label-pr --pr "$PR_NUMBER"
+        run: python3 -m pr_dashboard.run_dashboard label-pr --repo "$REPO" --pr "$PR_NUMBER"

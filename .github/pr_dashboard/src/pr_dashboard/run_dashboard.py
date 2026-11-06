@@ -2,7 +2,6 @@ import argparse
 import dataclasses
 import datetime
 import json
-import os
 import pathlib
 
 from pr_dashboard import github_api
@@ -148,18 +147,24 @@ def sync_label_set(
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "action",
-        choices=[
-            "label-pr",
-            "handle-comment",
-            "sync-label-set",
-        ],
+    action_parsers = parser.add_subparsers(
+        dest="action",
+        required=True,
     )
-    parser.add_argument("--repo", default=os.environ.get("GITHUB_REPOSITORY"))
-    parser.add_argument("--pr", type=int)
-    parser.add_argument("--event-path", default=os.environ.get("GITHUB_EVENT_PATH"))
-    parser.add_argument("--dry-run", action="store_true")
+    label_pr_parser = action_parsers.add_parser("label-pr")
+    label_pr_parser.add_argument("--repo", required=True)
+    label_pr_parser.add_argument(
+        "--pr",
+        type=int,
+        required=True,
+    )
+    label_pr_parser.add_argument("--dry-run", action="store_true")
+    handle_comment_parser = action_parsers.add_parser("handle-comment")
+    handle_comment_parser.add_argument("--repo", required=True)
+    handle_comment_parser.add_argument("--event-path", required=True)
+    sync_label_set_parser = action_parsers.add_parser("sync-label-set")
+    sync_label_set_parser.add_argument("--repo", required=True)
+    sync_label_set_parser.add_argument("--dry-run", action="store_true")
     parsed_args = parser.parse_args()
     if parsed_args.action == "label-pr":
         label_pr(

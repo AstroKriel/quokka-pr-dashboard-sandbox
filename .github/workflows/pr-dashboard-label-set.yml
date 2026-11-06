@@ -25,5 +25,6 @@ jobs:
       - name: Create and update the labels in labels.toml
         env:
           GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
           PYTHONPATH: .github/pr_dashboard/src
-        run: python3 -m pr_dashboard.run_dashboard sync-label-set
+        run: python3 -m pr_dashboard.run_dashboard sync-label-set --repo "$REPO"
