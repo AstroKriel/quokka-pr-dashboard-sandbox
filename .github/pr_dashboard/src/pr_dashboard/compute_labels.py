@@ -49,6 +49,19 @@ def _compute_size_label_name(
     return size_label_name
 
 
+def _check_label_is_stale(
+    *,
+    configured_labels: label_types.ConfiguredLabels,
+    label_name: str,
+    computed_label_names: set[str],
+) -> bool:
+    label_is_computed_by_tool = (
+        configured_labels.scope_labels.check_has_prefix(label_name)
+        or configured_labels.size_labels.check_has_prefix(label_name)
+    )
+    return label_is_computed_by_tool and (label_name not in computed_label_names)
+
+
 def compute_label_changes(
     *,
     configured_labels: label_types.ConfiguredLabels,
@@ -72,10 +85,11 @@ def compute_label_changes(
         computed_label_names.add(configured_labels.priority_labels.default_label.label_name)
     label_names_to_add = sorted(computed_label_names - set(current_label_names))
     label_names_to_remove = sorted(
-        _label_name for _label_name in current_label_names if (
-            configured_labels.scope_labels.check_has_prefix(_label_name)
-            or configured_labels.size_labels.check_has_prefix(_label_name)
-        ) and (_label_name not in computed_label_names)
+        _label_name for _label_name in current_label_names if _check_label_is_stale(
+            configured_labels=configured_labels,
+            label_name=_label_name,
+            computed_label_names=computed_label_names,
+        )
     )
     return label_types.LabelChanges(
         label_names_to_add=tuple(label_names_to_add),
