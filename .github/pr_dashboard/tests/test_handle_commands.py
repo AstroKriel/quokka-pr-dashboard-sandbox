@@ -57,7 +57,7 @@ def run_command(
         user=user,
         text=text,
     )
-    return handle_commands.handle_comment(
+    return handle_commands.make_comment_update_plan(
         configured_labels=CONFIGURED_LABELS,
         pull_request=pull_request,
         comment=comment,

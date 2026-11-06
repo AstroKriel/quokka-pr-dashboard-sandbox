@@ -294,7 +294,7 @@ def recompute_labels(
     )
 
 
-def handle_comment(
+def make_comment_update_plan(
     *,
     configured_labels: label_types.ConfiguredLabels,
     pull_request: pr_types.PullRequest,
