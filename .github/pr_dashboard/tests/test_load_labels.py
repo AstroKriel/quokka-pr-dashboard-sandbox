@@ -78,12 +78,12 @@ class TestLoadLabels_Categories(unittest.TestCase):
         self.assertEqual(CONFIGURED_LABELS.scope_labels.not_mapped_label.label_name, "scope/not_mapped")
         self.assertEqual(CONFIGURED_LABELS.size_labels.labels[0].label_name, "size/XS")
 
-    def test_categories_own_their_label_names(
+    def test_categories_check_their_prefix(
         self,
     ):
-        self.assertTrue(CONFIGURED_LABELS.scope_labels.check_owns("scope/hydro"))
-        self.assertFalse(CONFIGURED_LABELS.scope_labels.check_owns("size/XS"))
-        self.assertTrue(CONFIGURED_LABELS.priority_labels.check_owns("priority/urgent"))
+        self.assertTrue(CONFIGURED_LABELS.scope_labels.check_has_prefix("scope/hydro"))
+        self.assertFalse(CONFIGURED_LABELS.scope_labels.check_has_prefix("size/XS"))
+        self.assertTrue(CONFIGURED_LABELS.priority_labels.check_has_prefix("priority/urgent"))
 
     def test_default_priority_is_medium(
         self,

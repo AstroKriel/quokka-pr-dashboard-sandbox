@@ -39,7 +39,7 @@ class PriorityLabel(Label):
 class LabelCategory:
     prefix: str
 
-    def check_owns(
+    def check_has_prefix(
         self,
         label_name: str,
     ) -> bool:

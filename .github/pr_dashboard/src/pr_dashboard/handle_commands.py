@@ -144,7 +144,7 @@ def _set_priority(
     wanted_label_name = priority_label.label_name
     label_names_to_remove = tuple(
         _label_name for _label_name in pull_request.label_names
-        if priority_labels.check_owns(_label_name) and (_label_name != wanted_label_name)
+        if priority_labels.check_has_prefix(_label_name) and (_label_name != wanted_label_name)
     )
     if wanted_label_name in pull_request.label_names:
         label_names_to_add = ()

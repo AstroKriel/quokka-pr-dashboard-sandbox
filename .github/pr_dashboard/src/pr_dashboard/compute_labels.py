@@ -56,7 +56,7 @@ def compute_label_changes(
     edited_file_paths: tuple[str, ...],
     num_lines_changed: int,
 ) -> label_types.LabelChanges:
-    wanted_label_names = _compute_scope_label_names(
+    computed_label_names = _compute_scope_label_names(
         configured_labels=configured_labels,
         edited_file_paths=edited_file_paths,
     )
@@ -64,18 +64,18 @@ def compute_label_changes(
         configured_labels=configured_labels,
         num_lines_changed=num_lines_changed,
     )
-    wanted_label_names.add(size_label_name)
+    computed_label_names.add(size_label_name)
     priority_is_set = any(
-        configured_labels.priority_labels.check_owns(_label_name) for _label_name in current_label_names
+        configured_labels.priority_labels.check_has_prefix(_label_name) for _label_name in current_label_names
     )
     if not priority_is_set:
-        wanted_label_names.add(configured_labels.priority_labels.default_label.label_name)
-    label_names_to_add = sorted(wanted_label_names - set(current_label_names))
+        computed_label_names.add(configured_labels.priority_labels.default_label.label_name)
+    label_names_to_add = sorted(computed_label_names - set(current_label_names))
     label_names_to_remove = sorted(
         _label_name for _label_name in current_label_names if (
-            configured_labels.scope_labels.check_owns(_label_name)
-            or configured_labels.size_labels.check_owns(_label_name)
-        ) and (_label_name not in wanted_label_names)
+            configured_labels.scope_labels.check_has_prefix(_label_name)
+            or configured_labels.size_labels.check_has_prefix(_label_name)
+        ) and (_label_name not in computed_label_names)
     )
     return label_types.LabelChanges(
         label_names_to_add=tuple(label_names_to_add),
