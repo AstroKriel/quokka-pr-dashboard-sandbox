@@ -9,13 +9,13 @@ from pr_dashboard import github_api
 from pr_dashboard import interpret_commands
 from pr_dashboard import label_types
 from pr_dashboard import load_labels
-from pr_dashboard import pr_types
+from pr_dashboard import pr_context
 
 LABELS_TOML_PATH = pathlib.Path(__file__).parents[2] / "labels.toml"
 
 
 def print_update_plan(
-    update_plan: pr_types.UpdatePlan,
+    update_plan: pr_context.UpdatePlan,
 ) -> None:
     print(
         json.dumps(
@@ -68,7 +68,7 @@ def run_comment_command(
         repo=repo,
         user_name=commenter_user_name,
     )
-    comment = pr_types.Comment(
+    comment = pr_context.Comment(
         comment_id=event_data["comment"]["id"],
         user=user,
         text=comment_text,

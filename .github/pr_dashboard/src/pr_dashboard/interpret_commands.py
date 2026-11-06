@@ -3,18 +3,18 @@ import datetime
 
 from pr_dashboard import compute_labels
 from pr_dashboard import label_types
-from pr_dashboard import pr_types
+from pr_dashboard import pr_context
 
 _ROLES_WITH_TRIAGE_ACCESS = (
-    pr_types.RoleInRepo.TRIAGE,
-    pr_types.RoleInRepo.WRITE,
-    pr_types.RoleInRepo.MAINTAIN,
-    pr_types.RoleInRepo.ADMIN,
+    pr_context.RoleInRepo.TRIAGE,
+    pr_context.RoleInRepo.WRITE,
+    pr_context.RoleInRepo.MAINTAIN,
+    pr_context.RoleInRepo.ADMIN,
 )
 _ROLES_WITH_WRITE_ACCESS = (
-    pr_types.RoleInRepo.WRITE,
-    pr_types.RoleInRepo.MAINTAIN,
-    pr_types.RoleInRepo.ADMIN,
+    pr_context.RoleInRepo.WRITE,
+    pr_context.RoleInRepo.MAINTAIN,
+    pr_context.RoleInRepo.ADMIN,
 )
 
 
@@ -109,13 +109,13 @@ def _format_usage(
 
 def _usage_reply(
     command: Command,
-) -> pr_types.UpdatePlan:
-    return pr_types.UpdatePlan(reply=f"Use {command.usage}.")
+) -> pr_context.UpdatePlan:
+    return pr_context.UpdatePlan(reply=f"Use {command.usage}.")
 
 
 def _help_reply(
     priority_labels: label_types.PriorityLabels,
-) -> pr_types.UpdatePlan:
+) -> pr_context.UpdatePlan:
     help_lines = ["PR dashboard commands:"]
     for command in COMMANDS:
         usage = _format_usage(
@@ -124,7 +124,7 @@ def _help_reply(
         )
         help_line = f"- {usage}: {command.description}. For {command.allowed_users}."
         help_lines.append(help_line)
-    return pr_types.UpdatePlan(reply="\n".join(help_lines))
+    return pr_context.UpdatePlan(reply="\n".join(help_lines))
 
 
 def _mention_list(
@@ -152,39 +152,39 @@ def _review_taken_reply(
 
 def _author_or_triage_only_reply(
     command: Command,
-) -> pr_types.UpdatePlan:
-    return pr_types.UpdatePlan(
+) -> pr_context.UpdatePlan:
+    return pr_context.UpdatePlan(
         reply=f"Only the PR author and maintainers can use `{command.name}`.",
     )
 
 
 def _accept_review(
     *,
-    pull_request: pr_types.PullRequest,
-    comment: pr_types.Comment,
+    pull_request: pr_context.PullRequest,
+    comment: pr_context.Comment,
     argument: str,
     today: datetime.date,
-) -> pr_types.UpdatePlan:
+) -> pr_context.UpdatePlan:
     try:
         review_date = datetime.date.fromisoformat(argument)
     except ValueError:
         review_date = None
     if comment.user.role_in_repo not in _ROLES_WITH_WRITE_ACCESS:
-        return pr_types.UpdatePlan(reply="Only maintainers (anyone with write access) can accept a review.")
+        return pr_context.UpdatePlan(reply="Only maintainers (anyone with write access) can accept a review.")
     elif comment.user.user_name == pull_request.author_user_name:
-        return pr_types.UpdatePlan(reply="You can't accept the review of your own PR.")
+        return pr_context.UpdatePlan(reply="You can't accept the review of your own PR.")
     elif review_date is None:
         return _usage_reply(ACCEPT_REVIEW)
     elif review_date < today:
-        return pr_types.UpdatePlan(
+        return pr_context.UpdatePlan(
             reply=f"The review date has to be today or later. Use {ACCEPT_REVIEW.usage}.",
         )
     elif pull_request.assignee_user_names == (comment.user.user_name, ):
-        return pr_types.UpdatePlan(react=True)
+        return pr_context.UpdatePlan(react=True)
     elif len(pull_request.assignee_user_names) > 0:
-        return pr_types.UpdatePlan(reply=_review_taken_reply(pull_request.assignee_user_names))
+        return pr_context.UpdatePlan(reply=_review_taken_reply(pull_request.assignee_user_names))
     else:
-        return pr_types.UpdatePlan(
+        return pr_context.UpdatePlan(
             assignee_user_names_to_add=(comment.user.user_name, ),
             react=True,
         )
@@ -192,39 +192,39 @@ def _accept_review(
 
 def _release_review(
     *,
-    pull_request: pr_types.PullRequest,
-    comment: pr_types.Comment,
+    pull_request: pr_context.PullRequest,
+    comment: pr_context.Comment,
     argument: str,
-) -> pr_types.UpdatePlan:
+) -> pr_context.UpdatePlan:
     if argument != "":
         return _usage_reply(RELEASE_REVIEW)
     elif comment.user.user_name in pull_request.assignee_user_names:
-        return pr_types.UpdatePlan(
+        return pr_context.UpdatePlan(
             assignee_user_names_to_remove=(comment.user.user_name, ),
             react=True,
         )
     elif len(pull_request.assignee_user_names) > 0:
-        return pr_types.UpdatePlan(
+        return pr_context.UpdatePlan(
             reply=
             f"{_mention_list(pull_request.assignee_user_names)} accepted this review, so only they can release it.",
         )
     else:
-        return pr_types.UpdatePlan(reply="Nobody has accepted this review yet.")
+        return pr_context.UpdatePlan(reply="Nobody has accepted this review yet.")
 
 
 def _set_priority(
     *,
     priority_labels: label_types.PriorityLabels,
-    pull_request: pr_types.PullRequest,
+    pull_request: pr_context.PullRequest,
     argument: str,
-) -> pr_types.UpdatePlan:
+) -> pr_context.UpdatePlan:
     priority_label = priority_labels.get_label(argument)
     if priority_label is None:
         usage = _format_usage(
             command=SET_PRIORITY,
             priority_labels=priority_labels,
         )
-        return pr_types.UpdatePlan(reply=f"Use {usage}.")
+        return pr_context.UpdatePlan(reply=f"Use {usage}.")
     wanted_label_name = priority_label.label_name
     label_names_to_remove = tuple(
         _label_name for _label_name in pull_request.label_names
@@ -234,7 +234,7 @@ def _set_priority(
         label_names_to_add = ()
     else:
         label_names_to_add = (wanted_label_name, )
-    return pr_types.UpdatePlan(
+    return pr_context.UpdatePlan(
         label_names_to_add=label_names_to_add,
         label_names_to_remove=label_names_to_remove,
         react=True,
@@ -243,32 +243,34 @@ def _set_priority(
 
 def _set_milestone(
     *,
-    open_milestones: tuple[pr_types.Milestone, ...],
+    open_milestones: tuple[pr_context.Milestone, ...],
     argument: str,
-) -> pr_types.UpdatePlan:
+) -> pr_context.UpdatePlan:
     matching_milestones = [
         _milestone for _milestone in open_milestones if _milestone.title.lower() == argument.lower()
     ]
     if argument == "":
         return _usage_reply(SET_MILESTONE)
     elif argument.lower() == "none":
-        return pr_types.UpdatePlan(
-            milestone_change=pr_types.MilestoneChange(milestone_number=None),
+        return pr_context.UpdatePlan(
+            milestone_change=pr_context.MilestoneChange(milestone_number=None),
             react=True,
         )
     elif len(matching_milestones) > 0:
-        milestone_change = pr_types.MilestoneChange(milestone_number=matching_milestones[0].milestone_number)
-        return pr_types.UpdatePlan(
+        milestone_change = pr_context.MilestoneChange(
+            milestone_number=matching_milestones[0].milestone_number
+        )
+        return pr_context.UpdatePlan(
             milestone_change=milestone_change,
             react=True,
         )
     elif len(open_milestones) == 0:
-        return pr_types.UpdatePlan(
+        return pr_context.UpdatePlan(
             reply=f'No open milestone is called "{argument}", and there are no open milestones.',
         )
     else:
         milestone_titles = ", ".join(f"`{_milestone.title}`" for _milestone in open_milestones)
-        return pr_types.UpdatePlan(
+        return pr_context.UpdatePlan(
             reply=f'No open milestone is called "{argument}". The open milestones are {milestone_titles}.',
         )
 
@@ -276,9 +278,9 @@ def _set_milestone(
 def _recompute_labels(
     *,
     configured_labels: label_types.ConfiguredLabels,
-    pull_request: pr_types.PullRequest,
+    pull_request: pr_context.PullRequest,
     argument: str,
-) -> pr_types.UpdatePlan:
+) -> pr_context.UpdatePlan:
     if argument != "":
         return _usage_reply(RECOMPUTE_LABELS)
     label_update_plan = compute_labels.make_label_update_plan(
@@ -291,11 +293,11 @@ def _recompute_labels(
 def make_comment_update_plan(
     *,
     configured_labels: label_types.ConfiguredLabels,
-    pull_request: pr_types.PullRequest,
-    comment: pr_types.Comment,
-    open_milestones: tuple[pr_types.Milestone, ...],
+    pull_request: pr_context.PullRequest,
+    comment: pr_context.Comment,
+    open_milestones: tuple[pr_context.Milestone, ...],
     today: datetime.date,
-) -> pr_types.UpdatePlan | None:
+) -> pr_context.UpdatePlan | None:
     parsed_command = parse_command(comment.text)
     if parsed_command is None:
         return None

@@ -3,7 +3,7 @@ import json
 import subprocess
 import urllib.parse
 
-from pr_dashboard import pr_types
+from pr_dashboard import pr_context
 
 _WRITE_METHODS = (
     http.HTTPMethod.POST,
@@ -87,7 +87,7 @@ def get_pull_request(
     *,
     repo: str,
     pr_number: int,
-) -> pr_types.PullRequest:
+) -> pr_context.PullRequest:
     pr_data = _read_from_github(endpoint=f"repos/{repo}/pulls/{pr_number}")
     file_pages = _read_from_github(
         endpoint=f"repos/{repo}/pulls/{pr_number}/files?per_page=100",
@@ -96,7 +96,7 @@ def get_pull_request(
     edited_file_paths = tuple(
         _file_data["filename"] for _file_page in file_pages for _file_data in _file_page
     )
-    return pr_types.PullRequest(
+    return pr_context.PullRequest(
         pr_number=pr_number,
         author_user_name=pr_data["user"]["login"],
         assignee_user_names=tuple(_assignee_data["login"] for _assignee_data in pr_data["assignees"]),
@@ -110,15 +110,15 @@ def get_user(
     *,
     repo: str,
     user_name: str,
-) -> pr_types.User:
+) -> pr_context.User:
     try:
         permission_data = _read_from_github(
             endpoint=f"repos/{repo}/collaborators/{_quote(user_name)}/permission",
         )
-        role_in_repo = pr_types.RoleInRepo(permission_data["role_name"])
+        role_in_repo = pr_context.RoleInRepo(permission_data["role_name"])
     except (subprocess.CalledProcessError, ValueError):
-        role_in_repo = pr_types.RoleInRepo.READ
-    return pr_types.User(
+        role_in_repo = pr_context.RoleInRepo.READ
+    return pr_context.User(
         user_name=user_name,
         role_in_repo=role_in_repo,
     )
@@ -126,13 +126,13 @@ def get_user(
 
 def get_open_milestones(
     repo: str,
-) -> tuple[pr_types.Milestone, ...]:
+) -> tuple[pr_context.Milestone, ...]:
     milestone_pages = _read_from_github(
         endpoint=f"repos/{repo}/milestones?state=open&per_page=100",
         paginate=True,
     )
     return tuple(
-        pr_types.Milestone(
+        pr_context.Milestone(
             milestone_number=_milestone_data["number"],
             title=_milestone_data["title"],
         ) for _milestone_page in milestone_pages for _milestone_data in _milestone_page
@@ -191,7 +191,7 @@ def apply_update_plan(
     repo: str,
     pr_number: int,
     comment_id: int | None,
-    update_plan: pr_types.UpdatePlan,
+    update_plan: pr_context.UpdatePlan,
 ) -> None:
     # every PR is also an issue: its labels, assignees, milestone and comments live under the issues API
     issue_endpoint = f"repos/{repo}/issues/{pr_number}"

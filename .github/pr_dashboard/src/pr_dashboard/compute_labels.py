@@ -1,7 +1,7 @@
 import fnmatch
 
 from pr_dashboard import label_types
-from pr_dashboard import pr_types
+from pr_dashboard import pr_context
 
 
 def _path_matches_any(
@@ -101,15 +101,15 @@ def _compute_label_changes(
 def make_label_update_plan(
     *,
     configured_labels: label_types.ConfiguredLabels,
-    pull_request: pr_types.PullRequest,
-) -> pr_types.UpdatePlan:
+    pull_request: pr_context.PullRequest,
+) -> pr_context.UpdatePlan:
     label_changes = _compute_label_changes(
         configured_labels=configured_labels,
         current_label_names=pull_request.label_names,
         edited_file_paths=pull_request.edited_file_paths,
         num_lines_changed=pull_request.num_lines_changed,
     )
-    return pr_types.UpdatePlan(
+    return pr_context.UpdatePlan(
         label_names_to_add=label_changes.label_names_to_add,
         label_names_to_remove=label_changes.label_names_to_remove,
     )

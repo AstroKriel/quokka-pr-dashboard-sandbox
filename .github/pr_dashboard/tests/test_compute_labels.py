@@ -4,7 +4,7 @@ import unittest
 
 from pr_dashboard import compute_labels
 from pr_dashboard import load_labels
-from pr_dashboard import pr_types
+from pr_dashboard import pr_context
 
 CONFIGURED_LABELS = load_labels.load_configured_labels(pathlib.Path(__file__).parents[1] / "labels.toml")
 
@@ -187,7 +187,7 @@ class TestComputeLabels_UpdatePlan(unittest.TestCase):
     def test_changes_only_labels(
         self,
     ):
-        pull_request = pr_types.PullRequest(
+        pull_request = pr_context.PullRequest(
             pr_number=1,
             author_user_name="pr-author",
             assignee_user_names=(),
@@ -199,7 +199,7 @@ class TestComputeLabels_UpdatePlan(unittest.TestCase):
             configured_labels=CONFIGURED_LABELS,
             pull_request=pull_request,
         )
-        expected_update_plan = pr_types.UpdatePlan(
+        expected_update_plan = pr_context.UpdatePlan(
             label_names_to_add=("priority/medium", "scope/IO", "size/M"),
             label_names_to_remove=("scope/radiation", ),
         )

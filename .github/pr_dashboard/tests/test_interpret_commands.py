@@ -4,16 +4,16 @@ import unittest
 
 from pr_dashboard import interpret_commands
 from pr_dashboard import load_labels
-from pr_dashboard import pr_types
+from pr_dashboard import pr_context
 
 CONFIGURED_LABELS = load_labels.load_configured_labels(pathlib.Path(__file__).parents[1] / "labels.toml")
 TODAY = datetime.date(2026, 11, 5)
 OPEN_MILESTONES = (
-    pr_types.Milestone(
+    pr_context.Milestone(
         milestone_number=6,
         title="Rewrite RHD module",
     ),
-    pr_types.Milestone(
+    pr_context.Milestone(
         milestone_number=8,
         title="photochem",
     ),
@@ -26,8 +26,8 @@ def make_pull_request(
     label_names: tuple[str, ...] = (),
     edited_file_paths: tuple[str, ...] = ("src/hydro/hydro_system.cpp", ),
     num_lines_changed: int = 12,
-) -> pr_types.PullRequest:
-    return pr_types.PullRequest(
+) -> pr_context.PullRequest:
+    return pr_context.PullRequest(
         pr_number=1,
         author_user_name="pr-author",
         assignee_user_names=assignee_user_names,
@@ -43,16 +43,16 @@ DEFAULT_PULL_REQUEST = make_pull_request()
 def run_command(
     *,
     text: str,
-    pull_request: pr_types.PullRequest = DEFAULT_PULL_REQUEST,
+    pull_request: pr_context.PullRequest = DEFAULT_PULL_REQUEST,
     user_name: str = "maintainer",
-    role_in_repo: pr_types.RoleInRepo = pr_types.RoleInRepo.WRITE,
-    open_milestones: tuple[pr_types.Milestone, ...] = OPEN_MILESTONES,
-) -> pr_types.UpdatePlan | None:
-    user = pr_types.User(
+    role_in_repo: pr_context.RoleInRepo = pr_context.RoleInRepo.WRITE,
+    open_milestones: tuple[pr_context.Milestone, ...] = OPEN_MILESTONES,
+) -> pr_context.UpdatePlan | None:
+    user = pr_context.User(
         user_name=user_name,
         role_in_repo=role_in_repo,
     )
-    comment = pr_types.Comment(
+    comment = pr_context.Comment(
         comment_id=99,
         user=user,
         text=text,
@@ -103,7 +103,7 @@ class TestInterpretCommands_AcceptReview(unittest.TestCase):
         self,
     ):
         update_plan = run_command(text="/accept-review 2026-11-12")
-        expected_update_plan = pr_types.UpdatePlan(
+        expected_update_plan = pr_context.UpdatePlan(
             assignee_user_names_to_add=("maintainer", ),
             react=True,
         )
@@ -123,7 +123,7 @@ class TestInterpretCommands_AcceptReview(unittest.TestCase):
             text="/accept-review 2026-11-20",
             pull_request=pull_request,
         )
-        self.assertEqual(update_plan, pr_types.UpdatePlan(react=True))
+        self.assertEqual(update_plan, pr_context.UpdatePlan(react=True))
 
     def test_second_reviewer_is_refused(
         self,
@@ -137,7 +137,7 @@ class TestInterpretCommands_AcceptReview(unittest.TestCase):
             "@first-reviewer has accepted this review. "
             "You're welcome to leave a review or comment, or ask them to hand it over."
         )
-        self.assertEqual(update_plan, pr_types.UpdatePlan(reply=expected_reply))
+        self.assertEqual(update_plan, pr_context.UpdatePlan(reply=expected_reply))
 
     def test_several_assignees_set_by_hand(
         self,
@@ -175,9 +175,9 @@ class TestInterpretCommands_AcceptReview(unittest.TestCase):
         update_plan = run_command(
             text="/accept-review 2026-11-12",
             user_name="contributor",
-            role_in_repo=pr_types.RoleInRepo.READ,
+            role_in_repo=pr_context.RoleInRepo.READ,
         )
-        expected_update_plan = pr_types.UpdatePlan(
+        expected_update_plan = pr_context.UpdatePlan(
             reply="Only maintainers (anyone with write access) can accept a review.",
         )
         self.assertEqual(update_plan, expected_update_plan)
@@ -188,9 +188,9 @@ class TestInterpretCommands_AcceptReview(unittest.TestCase):
         update_plan = run_command(
             text="/accept-review 2026-11-12",
             user_name="triager",
-            role_in_repo=pr_types.RoleInRepo.TRIAGE,
+            role_in_repo=pr_context.RoleInRepo.TRIAGE,
         )
-        expected_update_plan = pr_types.UpdatePlan(
+        expected_update_plan = pr_context.UpdatePlan(
             reply="Only maintainers (anyone with write access) can accept a review.",
         )
         self.assertEqual(update_plan, expected_update_plan)
@@ -202,7 +202,7 @@ class TestInterpretCommands_AcceptReview(unittest.TestCase):
             text="/accept-review 2026-11-12",
             user_name="pr-author",
         )
-        expected_update_plan = pr_types.UpdatePlan(reply="You can't accept the review of your own PR.")
+        expected_update_plan = pr_context.UpdatePlan(reply="You can't accept the review of your own PR.")
         self.assertEqual(update_plan, expected_update_plan)
 
 
@@ -216,7 +216,7 @@ class TestInterpretCommands_ReleaseReview(unittest.TestCase):
             text="/release-review",
             pull_request=pull_request,
         )
-        expected_update_plan = pr_types.UpdatePlan(
+        expected_update_plan = pr_context.UpdatePlan(
             assignee_user_names_to_remove=("maintainer", ),
             react=True,
         )
@@ -231,13 +231,13 @@ class TestInterpretCommands_ReleaseReview(unittest.TestCase):
             pull_request=pull_request,
         )
         expected_reply = "@first-reviewer accepted this review, so only they can release it."
-        self.assertEqual(update_plan, pr_types.UpdatePlan(reply=expected_reply))
+        self.assertEqual(update_plan, pr_context.UpdatePlan(reply=expected_reply))
 
     def test_nobody_has_accepted(
         self,
     ):
         update_plan = run_command(text="/release-review")
-        self.assertEqual(update_plan, pr_types.UpdatePlan(reply="Nobody has accepted this review yet."))
+        self.assertEqual(update_plan, pr_context.UpdatePlan(reply="Nobody has accepted this review yet."))
 
     def test_unexpected_argument(
         self,
@@ -247,7 +247,7 @@ class TestInterpretCommands_ReleaseReview(unittest.TestCase):
             text="/release-review now",
             pull_request=pull_request,
         )
-        self.assertEqual(update_plan, pr_types.UpdatePlan(reply="Use `/release-review`."))
+        self.assertEqual(update_plan, pr_context.UpdatePlan(reply="Use `/release-review`."))
 
 
 class TestInterpretCommands_SetPriority(unittest.TestCase):
@@ -260,7 +260,7 @@ class TestInterpretCommands_SetPriority(unittest.TestCase):
             text="/set-priority High",
             pull_request=pull_request,
         )
-        expected_update_plan = pr_types.UpdatePlan(
+        expected_update_plan = pr_context.UpdatePlan(
             label_names_to_add=("priority/high", ),
             label_names_to_remove=("priority/medium", ),
             react=True,
@@ -275,13 +275,13 @@ class TestInterpretCommands_SetPriority(unittest.TestCase):
             text="/set-priority low",
             pull_request=pull_request,
         )
-        self.assertEqual(update_plan, pr_types.UpdatePlan(react=True))
+        self.assertEqual(update_plan, pr_context.UpdatePlan(react=True))
 
     def test_unknown_priority(
         self,
     ):
         update_plan = run_command(text="/set-priority urgent")
-        self.assertEqual(update_plan, pr_types.UpdatePlan(reply="Use `/set-priority <low|medium|high>`."))
+        self.assertEqual(update_plan, pr_context.UpdatePlan(reply="Use `/set-priority <low|medium|high>`."))
 
     def test_author_with_read_access_can_set(
         self,
@@ -289,7 +289,7 @@ class TestInterpretCommands_SetPriority(unittest.TestCase):
         update_plan = run_command(
             text="/set-priority high",
             user_name="pr-author",
-            role_in_repo=pr_types.RoleInRepo.READ,
+            role_in_repo=pr_context.RoleInRepo.READ,
         )
         self.assertEqual(update_plan.label_names_to_add, ("priority/high", ))
 
@@ -299,7 +299,7 @@ class TestInterpretCommands_SetPriority(unittest.TestCase):
         update_plan = run_command(
             text="/set-priority high",
             user_name="triager",
-            role_in_repo=pr_types.RoleInRepo.TRIAGE,
+            role_in_repo=pr_context.RoleInRepo.TRIAGE,
         )
         self.assertEqual(update_plan.label_names_to_add, ("priority/high", ))
 
@@ -309,10 +309,10 @@ class TestInterpretCommands_SetPriority(unittest.TestCase):
         update_plan = run_command(
             text="/set-priority high",
             user_name="passer-by",
-            role_in_repo=pr_types.RoleInRepo.READ,
+            role_in_repo=pr_context.RoleInRepo.READ,
         )
         expected_reply = "Only the PR author and maintainers can use `/set-priority`."
-        self.assertEqual(update_plan, pr_types.UpdatePlan(reply=expected_reply))
+        self.assertEqual(update_plan, pr_context.UpdatePlan(reply=expected_reply))
 
 
 class TestInterpretCommands_SetMilestone(unittest.TestCase):
@@ -321,8 +321,8 @@ class TestInterpretCommands_SetMilestone(unittest.TestCase):
         self,
     ):
         update_plan = run_command(text="/set-milestone rewrite rhd module")
-        expected_update_plan = pr_types.UpdatePlan(
-            milestone_change=pr_types.MilestoneChange(milestone_number=6),
+        expected_update_plan = pr_context.UpdatePlan(
+            milestone_change=pr_context.MilestoneChange(milestone_number=6),
             react=True,
         )
         self.assertEqual(update_plan, expected_update_plan)
@@ -331,8 +331,8 @@ class TestInterpretCommands_SetMilestone(unittest.TestCase):
         self,
     ):
         update_plan = run_command(text="/set-milestone none")
-        expected_update_plan = pr_types.UpdatePlan(
-            milestone_change=pr_types.MilestoneChange(milestone_number=None),
+        expected_update_plan = pr_context.UpdatePlan(
+            milestone_change=pr_context.MilestoneChange(milestone_number=None),
             react=True,
         )
         self.assertEqual(update_plan, expected_update_plan)
@@ -345,7 +345,7 @@ class TestInterpretCommands_SetMilestone(unittest.TestCase):
             'No open milestone is called "RHD rewrite". '
             "The open milestones are `Rewrite RHD module`, `photochem`."
         )
-        self.assertEqual(update_plan, pr_types.UpdatePlan(reply=expected_reply))
+        self.assertEqual(update_plan, pr_context.UpdatePlan(reply=expected_reply))
 
     def test_no_open_milestones(
         self,
@@ -355,13 +355,13 @@ class TestInterpretCommands_SetMilestone(unittest.TestCase):
             open_milestones=(),
         )
         expected_reply = 'No open milestone is called "photochem", and there are no open milestones.'
-        self.assertEqual(update_plan, pr_types.UpdatePlan(reply=expected_reply))
+        self.assertEqual(update_plan, pr_context.UpdatePlan(reply=expected_reply))
 
     def test_missing_title(
         self,
     ):
         update_plan = run_command(text="/set-milestone")
-        self.assertEqual(update_plan, pr_types.UpdatePlan(reply="Use `/set-milestone <title|none>`."))
+        self.assertEqual(update_plan, pr_context.UpdatePlan(reply="Use `/set-milestone <title|none>`."))
 
 
 class TestInterpretCommands_RecomputeLabels(unittest.TestCase):
@@ -377,7 +377,7 @@ class TestInterpretCommands_RecomputeLabels(unittest.TestCase):
             text="/recompute-labels",
             pull_request=pull_request,
         )
-        expected_update_plan = pr_types.UpdatePlan(
+        expected_update_plan = pr_context.UpdatePlan(
             label_names_to_add=("scope/hydro", "size/L"),
             label_names_to_remove=("scope/IO", ),
             react=True,
@@ -388,7 +388,7 @@ class TestInterpretCommands_RecomputeLabels(unittest.TestCase):
         self,
     ):
         update_plan = run_command(text="/recompute-labels all")
-        self.assertEqual(update_plan, pr_types.UpdatePlan(reply="Use `/recompute-labels`."))
+        self.assertEqual(update_plan, pr_context.UpdatePlan(reply="Use `/recompute-labels`."))
 
 
 class TestInterpretCommands_Help(unittest.TestCase):
@@ -414,7 +414,7 @@ class TestInterpretCommands_Help(unittest.TestCase):
         update_plan = run_command(
             text="/help",
             user_name="passer-by",
-            role_in_repo=pr_types.RoleInRepo.READ,
+            role_in_repo=pr_context.RoleInRepo.READ,
         )
         self.assertTrue(update_plan.reply.startswith("PR dashboard commands:"))
 
@@ -428,7 +428,7 @@ class TestInterpretCommands_Help(unittest.TestCase):
         self,
     ):
         update_plan = run_command(text="/help")
-        self.assertEqual(update_plan, pr_types.UpdatePlan(reply=update_plan.reply))
+        self.assertEqual(update_plan, pr_context.UpdatePlan(reply=update_plan.reply))
 
 
 if __name__ == "__main__":
