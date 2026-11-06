@@ -4,6 +4,7 @@ from pr_dashboard import label_types
 
 
 def _path_matches_any(
+    *,
     file_path: str,
     patterns: tuple[str, ...],
 ) -> bool:
@@ -11,15 +12,19 @@ def _path_matches_any(
 
 
 def _compute_scope_label_names(
+    *,
     configured_labels: label_types.ConfiguredLabels,
-    file_paths: tuple[str, ...],
+    edited_file_paths: tuple[str, ...],
 ) -> set[str]:
     scope_label_names = set()
-    for file_path in file_paths:
+    for file_path in edited_file_paths:
         matched_label_names = {
             _scope_label.name
             for _scope_label in configured_labels.scope_labels
-            if _path_matches_any(file_path, _scope_label.paths)
+            if _path_matches_any(
+                file_path=file_path,
+                patterns=_scope_label.paths,
+            )
         }
         if len(matched_label_names) == 0:
             scope_label_names.add(configured_labels.not_mapped_label.name)
@@ -29,6 +34,7 @@ def _compute_scope_label_names(
 
 
 def _compute_size_label_name(
+    *,
     configured_labels: label_types.ConfiguredLabels,
     num_lines_changed: int,
 ) -> str:
@@ -44,13 +50,20 @@ def _compute_size_label_name(
 
 
 def compute_label_changes(
+    *,
     configured_labels: label_types.ConfiguredLabels,
     current_label_names: tuple[str, ...],
-    file_paths: tuple[str, ...],
+    edited_file_paths: tuple[str, ...],
     num_lines_changed: int,
 ) -> label_types.LabelChanges:
-    wanted_label_names = _compute_scope_label_names(configured_labels, file_paths)
-    size_label_name = _compute_size_label_name(configured_labels, num_lines_changed)
+    wanted_label_names = _compute_scope_label_names(
+        configured_labels=configured_labels,
+        edited_file_paths=edited_file_paths,
+    )
+    size_label_name = _compute_size_label_name(
+        configured_labels=configured_labels,
+        num_lines_changed=num_lines_changed,
+    )
     wanted_label_names.add(size_label_name)
     priority_is_set = any(
         _label_name.startswith(label_types.PRIORITY_PREFIX) for _label_name in current_label_names

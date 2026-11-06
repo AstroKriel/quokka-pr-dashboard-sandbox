@@ -79,6 +79,7 @@ def _author_or_triage_only_reply(
 
 
 def _accept_review(
+    *,
     pull_request: pr_types.PullRequest,
     comment: pr_types.Comment,
     argument: str,
@@ -110,6 +111,7 @@ def _accept_review(
 
 
 def _release_review(
+    *,
     pull_request: pr_types.PullRequest,
     comment: pr_types.Comment,
     argument: str,
@@ -131,6 +133,7 @@ def _release_review(
 
 
 def _set_priority(
+    *,
     pull_request: pr_types.PullRequest,
     argument: str,
 ) -> pr_types.UpdatePlan:
@@ -155,6 +158,7 @@ def _set_priority(
 
 
 def _set_milestone(
+    *,
     open_milestones: tuple[pr_types.Milestone, ...],
     argument: str,
 ) -> pr_types.UpdatePlan:
@@ -186,6 +190,7 @@ def _set_milestone(
 
 
 def recompute_labels(
+    *,
     configured_labels: label_types.ConfiguredLabels,
     pull_request: pr_types.PullRequest,
     argument: str,
@@ -195,7 +200,7 @@ def recompute_labels(
     label_changes = compute_labels.compute_label_changes(
         configured_labels=configured_labels,
         current_label_names=pull_request.label_names,
-        file_paths=pull_request.file_paths,
+        edited_file_paths=pull_request.edited_file_paths,
         num_lines_changed=pull_request.num_lines_changed,
     )
     return pr_types.UpdatePlan(
@@ -206,6 +211,7 @@ def recompute_labels(
 
 
 def handle_comment(
+    *,
     configured_labels: label_types.ConfiguredLabels,
     pull_request: pr_types.PullRequest,
     comment: pr_types.Comment,
@@ -221,14 +227,33 @@ def handle_comment(
         or (comment.user.role_in_repo in _ROLES_WITH_TRIAGE_ACCESS)
     )
     if command_name == "/accept-review":
-        return _accept_review(pull_request, comment, argument, today)
+        return _accept_review(
+            pull_request=pull_request,
+            comment=comment,
+            argument=argument,
+            today=today,
+        )
     elif command_name == "/release-review":
-        return _release_review(pull_request, comment, argument)
+        return _release_review(
+            pull_request=pull_request,
+            comment=comment,
+            argument=argument,
+        )
     elif not commenter_is_author_or_triager:
         return _author_or_triage_only_reply(command_name)
     elif command_name == "/set-priority":
-        return _set_priority(pull_request, argument)
+        return _set_priority(
+            pull_request=pull_request,
+            argument=argument,
+        )
     elif command_name == "/set-milestone":
-        return _set_milestone(open_milestones, argument)
+        return _set_milestone(
+            open_milestones=open_milestones,
+            argument=argument,
+        )
     else:
-        return recompute_labels(configured_labels, pull_request, argument)
+        return recompute_labels(
+            configured_labels=configured_labels,
+            pull_request=pull_request,
+            argument=argument,
+        )

@@ -29,7 +29,7 @@ class PullRequest:
     assignees: tuple[str, ...]
     label_names: tuple[str, ...]
     num_lines_changed: int
-    file_paths: tuple[str, ...]
+    edited_file_paths: tuple[str, ...]
 
 
 @dataclasses.dataclass(frozen=True)

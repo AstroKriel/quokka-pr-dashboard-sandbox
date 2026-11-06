@@ -16,6 +16,7 @@ DEFAULT_PRIORITY_LABEL_TEXT = (
 
 
 def make_config_text(
+    *,
     scope_label_text: str,
     priority_label_text: str,
 ) -> str:
