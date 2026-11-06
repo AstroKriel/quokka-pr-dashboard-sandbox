@@ -79,7 +79,7 @@ class TestParseCommand(unittest.TestCase):
         self,
     ):
         parsed_command = commands.parse_command(
-            "/set-milestone Rewrite RHD module\nThis belongs to the rewrite."
+            "/set-milestone Rewrite RHD module\nThis belongs to the rewrite.",
         )
         self.assertEqual(parsed_command, ("/set-milestone", "Rewrite RHD module"))
 
@@ -95,10 +95,13 @@ class TestAcceptReview(unittest.TestCase):
         self,
     ):
         update_plan = run_comment(make_pull_request(), make_comment("/accept-review 2026-11-12"))
-        self.assertEqual(update_plan, commands.UpdatePlan(
-            assignees_to_add=("maintainer", ),
-            react=True,
-        ))
+        self.assertEqual(
+            update_plan,
+            commands.UpdatePlan(
+                assignees_to_add=("maintainer", ),
+                react=True,
+            ),
+        )
 
     def test_today_is_allowed(
         self,
@@ -130,7 +133,7 @@ class TestAcceptReview(unittest.TestCase):
         pull_request = make_pull_request(assignees=("reviewer-a", "reviewer-b"))
         update_plan = run_comment(pull_request, make_comment("/accept-review 2026-11-12"))
         self.assertTrue(
-            update_plan.reply.startswith("@reviewer-a and @reviewer-b have accepted this review.")
+            update_plan.reply.startswith("@reviewer-a and @reviewer-b have accepted this review."),
         )
 
     def test_missing_date(
@@ -161,7 +164,8 @@ class TestAcceptReview(unittest.TestCase):
         )
         update_plan = run_comment(make_pull_request(), comment)
         self.assertEqual(
-            update_plan, commands.UpdatePlan(reply="Only people with write access can accept a review.")
+            update_plan,
+            commands.UpdatePlan(reply="Only people with write access can accept a review."),
         )
 
     def test_triage_is_not_enough(
@@ -174,7 +178,8 @@ class TestAcceptReview(unittest.TestCase):
         )
         update_plan = run_comment(make_pull_request(), comment)
         self.assertEqual(
-            update_plan, commands.UpdatePlan(reply="Only people with write access can accept a review.")
+            update_plan,
+            commands.UpdatePlan(reply="Only people with write access can accept a review."),
         )
 
     def test_author_cannot_accept_own_pr(
@@ -183,7 +188,8 @@ class TestAcceptReview(unittest.TestCase):
         comment = make_comment("/accept-review 2026-11-12", user_name="pr-author")
         update_plan = run_comment(make_pull_request(), comment)
         self.assertEqual(
-            update_plan, commands.UpdatePlan(reply="You can't accept the review of your own PR.")
+            update_plan,
+            commands.UpdatePlan(reply="You can't accept the review of your own PR."),
         )
 
 
@@ -195,10 +201,11 @@ class TestReleaseReview(unittest.TestCase):
         pull_request = make_pull_request(assignees=("maintainer", ))
         update_plan = run_comment(pull_request, make_comment("/release-review"))
         self.assertEqual(
-            update_plan, commands.UpdatePlan(
+            update_plan,
+            commands.UpdatePlan(
                 assignees_to_remove=("maintainer", ),
                 react=True,
-            )
+            ),
         )
 
     def test_someone_else_cannot_release(
@@ -292,20 +299,26 @@ class TestSetMilestone(unittest.TestCase):
     ):
         update_plan = run_comment(make_pull_request(), make_comment("/set-milestone rewrite rhd module"))
         milestone_change = commands.MilestoneChange(milestone_number=6)
-        self.assertEqual(update_plan, commands.UpdatePlan(
-            milestone_change=milestone_change,
-            react=True,
-        ))
+        self.assertEqual(
+            update_plan,
+            commands.UpdatePlan(
+                milestone_change=milestone_change,
+                react=True,
+            ),
+        )
 
     def test_none_removes(
         self,
     ):
         update_plan = run_comment(make_pull_request(), make_comment("/set-milestone none"))
         milestone_change = commands.MilestoneChange(milestone_number=None)
-        self.assertEqual(update_plan, commands.UpdatePlan(
-            milestone_change=milestone_change,
-            react=True,
-        ))
+        self.assertEqual(
+            update_plan,
+            commands.UpdatePlan(
+                milestone_change=milestone_change,
+                react=True,
+            ),
+        )
 
     def test_no_match_lists_open_milestones(
         self,

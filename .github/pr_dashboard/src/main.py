@@ -94,7 +94,7 @@ def sync_label_set(
 ) -> None:
     label_config = labels.load_label_config(LABEL_CONFIG_PATH)
     repo_labels = github_api.list_repo_labels(repo)
-    for label_definition in label_config.label_definitions:
+    for label_definition in label_config.all_label_definitions():
         sync_action = _label_sync_step(label_definition, repo_labels)
         if sync_action is None:
             continue
@@ -103,11 +103,17 @@ def sync_label_set(
             continue
         elif sync_action == "create":
             github_api.create_label(
-                repo, label_definition.name, label_definition.color, label_definition.description
+                repo,
+                label_definition.name,
+                label_definition.color,
+                label_definition.description,
             )
         else:
             github_api.update_label(
-                repo, label_definition.name, label_definition.color, label_definition.description
+                repo,
+                label_definition.name,
+                label_definition.color,
+                label_definition.description,
             )
 
 

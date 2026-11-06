@@ -12,7 +12,7 @@ default_priority = "priority/medium"
 label = "scope/tests"
 paths = ["src/problems/*", "inputs/*", "extern/*"]
 
-[[label]]
+[[scope_label]]
 name = "scope/hydro"
 color = "4ADD08"
 description = "Hydrodynamics"
@@ -25,7 +25,7 @@ paths = [
     "inputs/Nscbc*",
 ]
 
-[[label]]
+[[scope_label]]
 name = "scope/MHD"
 color = "66735C"
 description = "Magnetohydrodynamics"
@@ -46,7 +46,7 @@ paths = [
     "inputs/alfven_wave*",
 ]
 
-[[label]]
+[[scope_label]]
 name = "scope/radiation"
 color = "CAD629"
 description = "Radiation transport"
@@ -58,7 +58,7 @@ paths = [
     "inputs/Stromgren*",
 ]
 
-[[label]]
+[[scope_label]]
 name = "scope/particles"
 color = "277120"
 description = "Particles"
@@ -73,7 +73,7 @@ paths = [
     "inputs/GravRadParticle*",
 ]
 
-[[label]]
+[[scope_label]]
 name = "scope/chemistry"
 color = "C5DEF5"
 description = "Chemistry and chemical networks"
@@ -87,13 +87,13 @@ paths = [
     "inputs/PopIII*",
 ]
 
-[[label]]
+[[scope_label]]
 name = "scope/cooling"
 color = "BFD4F2"
 description = "Radiative cooling"
 paths = ["src/cooling/*", "src/problems/ResampledCooling*", "inputs/ResampledCooling*"]
 
-[[label]]
+[[scope_label]]
 name = "scope/dust"
 color = "D4C5F9"
 description = "Dust"
@@ -107,19 +107,19 @@ paths = [
     "inputs/RadMarshakDust*",
 ]
 
-[[label]]
+[[scope_label]]
 name = "scope/conduction"
 color = "F9D0C4"
 description = "Thermal conduction"
 paths = ["src/conduction/*", "src/problems/ThermalConduction*", "inputs/ThermalConduction*"]
 
-[[label]]
+[[scope_label]]
 name = "scope/IO"
 color = "1D76DB"
 description = "Input and output"
 paths = ["src/io/*"]
 
-[[label]]
+[[scope_label]]
 name = "scope/core"
 color = "5319E7"
 description = "The shared driver, math and utilities"
@@ -138,7 +138,7 @@ paths = [
     "src/linear_advection/*",
 ]
 
-[[label]]
+[[scope_label]]
 name = "scope/build"
 color = "C2E0C6"
 description = "The build system and third-party libraries"
@@ -154,19 +154,19 @@ paths = [
     "extern/openPMD-api*",
 ]
 
-[[label]]
+[[scope_label]]
 name = "scope/tests"
 color = "FEF2C0"
 description = "Test problems, inputs, reference data and the regression suite"
 paths = ["regression/*", "tests/*"]
 
-[[label]]
+[[scope_label]]
 name = "scope/tools"
 color = "E99695"
 description = "Helper scripts and files for AI agents"
 paths = ["scripts/*", ".agents/*", ".claude/*", "AGENTS.md", "CLAUDE.md", "context7.json"]
 
-[[label]]
+[[scope_label]]
 name = "scope/CI"
 color = "BFDADC"
 description = "Continuous integration and code checkers"
@@ -185,53 +185,53 @@ paths = [
     "src/CPPLINT.cfg",
 ]
 
-[[label]]
+[[scope_label]]
 name = "scope/documentation"
 color = "0075CA"
 description = "Documentation"
 paths = ["docs/*", "*.md", "paper/*", "CITATION.cff", "LICENSE", ".mailmap"]
 
-[[label]]
+[[size_label]]
 name = "size/XS"
 color = "00FF00"
 description = "This PR changes 0 to 9 lines"
 min_num_lines =0
 
-[[label]]
+[[size_label]]
 name = "size/S"
 color = "77B800"
 description = "This PR changes 10 to 29 lines"
 min_num_lines =10
 
-[[label]]
+[[size_label]]
 name = "size/M"
 color = "EBB800"
 description = "This PR changes 30 to 99 lines"
 min_num_lines =30
 
-[[label]]
+[[size_label]]
 name = "size/L"
 color = "EB9500"
 description = "This PR changes 100 to 499 lines"
 min_num_lines =100
 
-[[label]]
+[[size_label]]
 name = "size/XL"
 color = "FF823F"
 description = "This PR changes 500 or more lines"
 min_num_lines =500
 
-[[label]]
+[[priority_label]]
 name = "priority/low"
 color = "0E8A16"
 description = "Review when there is time"
 
-[[label]]
+[[priority_label]]
 name = "priority/medium"
 color = "FBCA04"
 description = "Review at the normal pace"
 
-[[label]]
+[[priority_label]]
 name = "priority/high"
 color = "D93F0B"
 description = "Review soon"

@@ -134,7 +134,7 @@ def _author_or_triage_only_reply(
     command_name: str,
 ) -> UpdatePlan:
     return UpdatePlan(
-        reply=f"Only the PR author and people with triage access or higher can use `{command_name}`."
+        reply=f"Only the PR author and people with triage access or higher can use `{command_name}`.",
     )
 
 
@@ -156,7 +156,7 @@ def accept_review(
         return _usage_reply("/accept-review")
     elif review_date < today:
         return UpdatePlan(
-            reply=f"The review date has to be today or later. Use {COMMAND_USAGES['/accept-review']}."
+            reply=f"The review date has to be today or later. Use {COMMAND_USAGES['/accept-review']}.",
         )
     elif pull_request.assignees == (comment.user.user_name, ):
         return UpdatePlan(react=True)
@@ -183,7 +183,8 @@ def release_review(
         )
     elif len(pull_request.assignees) > 0:
         return UpdatePlan(
-            reply=f"{_mention_list(pull_request.assignees)} accepted this review, so only they can release it."
+            reply=
+            f"{_mention_list(pull_request.assignees)} accepted this review, so only they can release it.",
         )
     else:
         return UpdatePlan(reply="Nobody has accepted this review yet.")
@@ -235,12 +236,12 @@ def set_milestone(
         )
     elif len(open_milestones) == 0:
         return UpdatePlan(
-            reply=f'No open milestone is called "{argument}", and there are no open milestones.'
+            reply=f'No open milestone is called "{argument}", and there are no open milestones.',
         )
     else:
         milestone_titles = ", ".join(f"`{_milestone.title}`" for _milestone in open_milestones)
         return UpdatePlan(
-            reply=f'No open milestone is called "{argument}". The open milestones are {milestone_titles}.'
+            reply=f'No open milestone is called "{argument}". The open milestones are {milestone_titles}.',
         )
 
 

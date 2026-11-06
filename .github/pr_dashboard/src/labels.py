@@ -13,16 +13,31 @@ class LabelDefinition:
     name: str
     color: str
     description: str
+
+
+@dataclasses.dataclass(frozen=True)
+class ScopeLabel(LabelDefinition):
     paths: tuple[str, ...]
-    min_num_lines: int | None
+
+
+@dataclasses.dataclass(frozen=True)
+class SizeLabel(LabelDefinition):
+    min_num_lines: int
 
 
 @dataclasses.dataclass(frozen=True)
 class LabelConfig:
-    label_definitions: tuple[LabelDefinition, ...]
+    scope_labels: tuple[ScopeLabel, ...]
+    size_labels: tuple[SizeLabel, ...]
+    priority_labels: tuple[LabelDefinition, ...]
     default_priority: str
     scope_fallback_label: str
     scope_fallback_paths: tuple[str, ...]
+
+    def all_label_definitions(
+        self,
+    ) -> tuple[LabelDefinition, ...]:
+        return self.scope_labels + self.size_labels + self.priority_labels
 
 
 @dataclasses.dataclass(frozen=True)
@@ -36,22 +51,33 @@ def load_label_config(
 ) -> LabelConfig:
     with open(config_path, "rb") as config_file:
         config_data = tomllib.load(config_file)
-    label_definitions = tuple(
+    scope_labels = tuple(
+        ScopeLabel(
+            name=_label_data["name"],
+            color=_label_data["color"],
+            description=_label_data["description"],
+            paths=tuple(_label_data["paths"]),
+        ) for _label_data in config_data["scope_label"]
+    )
+    size_labels = tuple(
+        SizeLabel(
+            name=_label_data["name"],
+            color=_label_data["color"],
+            description=_label_data["description"],
+            min_num_lines=_label_data["min_num_lines"],
+        ) for _label_data in config_data["size_label"]
+    )
+    priority_labels = tuple(
         LabelDefinition(
             name=_label_data["name"],
             color=_label_data["color"],
             description=_label_data["description"],
-            paths=tuple(
-                _label_data.get(
-                    "paths",
-                    [],
-                ),
-            ),
-            min_num_lines=_label_data.get("min_num_lines"),
-        ) for _label_data in config_data["label"]
+        ) for _label_data in config_data["priority_label"]
     )
     return LabelConfig(
-        label_definitions=label_definitions,
+        scope_labels=scope_labels,
+        size_labels=size_labels,
+        priority_labels=priority_labels,
         default_priority=config_data["default_priority"],
         scope_fallback_label=config_data["scope_fallback"]["label"],
         scope_fallback_paths=tuple(config_data["scope_fallback"]["paths"]),
@@ -72,10 +98,9 @@ def compute_scope_labels(
     scope_labels = set()
     for file_path in file_paths:
         matched_labels = {
-            _label_definition.name
-            for _label_definition in label_config.label_definitions
-            if _label_definition.name.startswith(SCOPE_PREFIX)
-            and _path_matches_any(file_path, _label_definition.paths)
+            _scope_label.name
+            for _scope_label in label_config.scope_labels
+            if _path_matches_any(file_path, _scope_label.paths)
         }
         if (len(matched_labels) == 0) and _path_matches_any(file_path, label_config.scope_fallback_paths):
             scope_labels.add(label_config.scope_fallback_label)
@@ -88,18 +113,15 @@ def compute_size_label(
     label_config: LabelConfig,
     num_lines_changed: int,
 ) -> str:
-    size_definitions = sorted(
-        (
-            _label_definition for _label_definition in label_config.label_definitions
-            if _label_definition.name.startswith(SIZE_PREFIX)
-        ),
-        key=lambda _label_definition: _label_definition.min_num_lines,
+    sorted_size_labels = sorted(
+        label_config.size_labels,
+        key=lambda _size_label: _size_label.min_num_lines,
     )
-    size_label = size_definitions[0].name
-    for size_definition in size_definitions:
-        if num_lines_changed >= size_definition.min_num_lines:
-            size_label = size_definition.name
-    return size_label
+    size_label_name = sorted_size_labels[0].name
+    for size_label in sorted_size_labels:
+        if num_lines_changed >= size_label.min_num_lines:
+            size_label_name = size_label.name
+    return size_label_name
 
 
 def compute_label_changes(

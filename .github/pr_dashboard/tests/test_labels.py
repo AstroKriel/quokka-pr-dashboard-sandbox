@@ -1,5 +1,6 @@
 import pathlib
 import subprocess
+import tempfile
 import unittest
 
 import labels
@@ -101,6 +102,33 @@ class TestScopeLabels(unittest.TestCase):
         self.assertEqual(unscoped_paths, [], "Add these paths to a scope in labels.toml")
 
 
+class TestLoadLabelConfig(unittest.TestCase):
+
+    def test_kinds_are_split(
+        self,
+    ):
+        self.assertEqual(len(LABEL_CONFIG.scope_labels), 15)
+        self.assertEqual(len(LABEL_CONFIG.size_labels), 5)
+        self.assertEqual(len(LABEL_CONFIG.priority_labels), 3)
+        self.assertEqual(len(LABEL_CONFIG.all_label_definitions()), 23)
+
+    def test_scope_label_without_paths_fails(
+        self,
+    ):
+        config_text = (
+            'default_priority = "priority/medium"\n'
+            '[scope_fallback]\nlabel = "scope/tests"\npaths = []\n'
+            '[[scope_label]]\nname = "scope/hydro"\ncolor = "4ADD08"\ndescription = "Hydrodynamics"\n'
+            '[[size_label]]\nname = "size/XS"\ncolor = "00FF00"\ndescription = "Small"\nmin_num_lines = 0\n'
+            '[[priority_label]]\nname = "priority/medium"\ncolor = "FBCA04"\ndescription = "Normal"\n'
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_path = pathlib.Path(temp_dir) / "labels.toml"
+            config_path.write_text(config_text)
+            with self.assertRaises(KeyError):
+                labels.load_label_config(config_path)
+
+
 class TestSizeLabel(unittest.TestCase):
 
     def test_boundaries(
@@ -137,7 +165,10 @@ class TestLabelChanges(unittest.TestCase):
     ):
         current_labels = ("scope/radiation", "size/XS", "priority/high", "code-audit")
         label_changes = labels.compute_label_changes(
-            LABEL_CONFIG, current_labels, ("src/io/plotfile.cpp", ), 40
+            LABEL_CONFIG,
+            current_labels,
+            ("src/io/plotfile.cpp", ),
+            40,
         )
         self.assertEqual(label_changes.labels_to_add, ("scope/IO", "size/M"))
         self.assertEqual(label_changes.labels_to_remove, ("scope/radiation", "size/XS"))
@@ -147,7 +178,10 @@ class TestLabelChanges(unittest.TestCase):
     ):
         current_labels = ("scope/IO", "size/M", "priority/low")
         label_changes = labels.compute_label_changes(
-            LABEL_CONFIG, current_labels, ("src/io/plotfile.cpp", ), 40
+            LABEL_CONFIG,
+            current_labels,
+            ("src/io/plotfile.cpp", ),
+            40,
         )
         self.assertEqual(label_changes.labels_to_add, ())
         self.assertEqual(label_changes.labels_to_remove, ())
