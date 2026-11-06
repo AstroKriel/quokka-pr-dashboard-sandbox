@@ -25,4 +25,5 @@ jobs:
       - name: Create and update the labels in labels.toml
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 .github/pr_dashboard/src/main.py sync-label-set
+          PYTHONPATH: .github/pr_dashboard/src
+        run: python3 -m pr_dashboard.run_dashboard sync-label-set

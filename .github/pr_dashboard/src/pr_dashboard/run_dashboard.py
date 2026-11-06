@@ -5,15 +5,17 @@ import json
 import os
 import pathlib
 
-import commands
-import github_api
-import labels
+from pr_dashboard import github_api
+from pr_dashboard import handle_commands
+from pr_dashboard import label_types
+from pr_dashboard import load_labels
+from pr_dashboard import pr_types
 
-LABELS_TOML_PATH = pathlib.Path(__file__).parents[1] / "labels.toml"
+LABELS_TOML_PATH = pathlib.Path(__file__).parents[2] / "labels.toml"
 
 
-def _print_update_plan(
-    update_plan: commands.UpdatePlan,
+def print_update_plan(
+    update_plan: pr_types.UpdatePlan,
 ) -> None:
     print(
         json.dumps(
@@ -28,11 +30,11 @@ def label_pr(
     pr_number: int,
     dry_run: bool,
 ) -> None:
-    configured_labels = labels.load_configured_labels(LABELS_TOML_PATH)
+    configured_labels = load_labels.load_configured_labels(LABELS_TOML_PATH)
     pull_request = github_api.get_pull_request(repo, pr_number)
-    update_plan = commands.recompute_labels(configured_labels, pull_request, argument="")
+    update_plan = handle_commands.recompute_labels(configured_labels, pull_request, argument="")
     unreacted_update_plan = dataclasses.replace(update_plan, react=False)
-    _print_update_plan(unreacted_update_plan)
+    print_update_plan(unreacted_update_plan)
     if not dry_run:
         github_api.apply_update_plan(
             repo,
@@ -42,7 +44,7 @@ def label_pr(
         )
 
 
-def handle_comment(
+def run_comment_command(
     repo: str,
     event_path: str,
 ) -> None:
@@ -51,21 +53,23 @@ def handle_comment(
     if "pull_request" not in event_data["issue"]:
         return
     comment_text = event_data["comment"]["body"]
-    if commands.parse_command(comment_text) is None:
+    if handle_commands.parse_command(comment_text) is None:
         return
     pr_number = event_data["issue"]["number"]
     user = github_api.get_user(repo, event_data["comment"]["user"]["login"])
-    comment = commands.Comment(
+    comment = pr_types.Comment(
         comment_id=event_data["comment"]["id"],
         user=user,
         text=comment_text,
     )
-    configured_labels = labels.load_configured_labels(LABELS_TOML_PATH)
+    configured_labels = load_labels.load_configured_labels(LABELS_TOML_PATH)
     pull_request = github_api.get_pull_request(repo, pr_number)
     open_milestones = github_api.list_open_milestones(repo)
     today = datetime.datetime.now(datetime.timezone.utc).date()
-    update_plan = commands.handle_comment(configured_labels, pull_request, comment, open_milestones, today)
-    _print_update_plan(update_plan)
+    update_plan = handle_commands.handle_comment(
+        configured_labels, pull_request, comment, open_milestones, today
+    )
+    print_update_plan(update_plan)
     github_api.apply_update_plan(
         repo,
         pr_number,
@@ -74,8 +78,8 @@ def handle_comment(
     )
 
 
-def _label_sync_step(
-    label: labels.Label,
+def get_label_sync_action(
+    label: label_types.Label,
     repo_labels: dict[str, dict],
 ) -> str | None:
     existing_label_data = repo_labels.get(label.name)
@@ -92,10 +96,10 @@ def sync_label_set(
     repo: str,
     dry_run: bool,
 ) -> None:
-    configured_labels = labels.load_configured_labels(LABELS_TOML_PATH)
+    configured_labels = load_labels.load_configured_labels(LABELS_TOML_PATH)
     repo_labels = github_api.list_repo_labels(repo)
     for label in configured_labels.all_labels():
-        sync_action = _label_sync_step(label, repo_labels)
+        sync_action = get_label_sync_action(label, repo_labels)
         if sync_action is None:
             continue
         print(f"{sync_action} {label.name}")
@@ -128,7 +132,7 @@ def main() -> None:
     if parsed_args.action == "label-pr":
         label_pr(parsed_args.repo, parsed_args.pr, parsed_args.dry_run)
     elif parsed_args.action == "handle-comment":
-        handle_comment(parsed_args.repo, parsed_args.event_path)
+        run_comment_command(parsed_args.repo, parsed_args.event_path)
     else:
         sync_label_set(parsed_args.repo, parsed_args.dry_run)
 

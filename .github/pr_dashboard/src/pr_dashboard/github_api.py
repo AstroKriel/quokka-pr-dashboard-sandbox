@@ -2,7 +2,7 @@ import json
 import subprocess
 import urllib.parse
 
-import commands
+from pr_dashboard import pr_types
 
 
 def _gh_api(
@@ -42,11 +42,11 @@ def _quote(
 def get_pull_request(
     repo: str,
     pr_number: int,
-) -> commands.PullRequest:
+) -> pr_types.PullRequest:
     pr_data = _gh_api(f"repos/{repo}/pulls/{pr_number}")
     file_pages = _gh_api(f"repos/{repo}/pulls/{pr_number}/files?per_page=100", paginate=True)
     file_paths = tuple(_file_data["filename"] for _file_page in file_pages for _file_data in _file_page)
-    return commands.PullRequest(
+    return pr_types.PullRequest(
         pr_number=pr_number,
         author=pr_data["user"]["login"],
         assignees=tuple(_assignee["login"] for _assignee in pr_data["assignees"]),
@@ -59,13 +59,13 @@ def get_pull_request(
 def get_user(
     repo: str,
     user_name: str,
-) -> commands.User:
+) -> pr_types.User:
     try:
         permission_data = _gh_api(f"repos/{repo}/collaborators/{_quote(user_name)}/permission")
-        role_in_repo = commands.RoleInRepo(permission_data["role_name"])
+        role_in_repo = pr_types.RoleInRepo(permission_data["role_name"])
     except (subprocess.CalledProcessError, ValueError):
-        role_in_repo = commands.RoleInRepo.READ
-    return commands.User(
+        role_in_repo = pr_types.RoleInRepo.READ
+    return pr_types.User(
         user_name=user_name,
         role_in_repo=role_in_repo,
     )
@@ -73,10 +73,10 @@ def get_user(
 
 def list_open_milestones(
     repo: str,
-) -> tuple[commands.Milestone, ...]:
+) -> tuple[pr_types.Milestone, ...]:
     milestone_pages = _gh_api(f"repos/{repo}/milestones?state=open&per_page=100", paginate=True)
     return tuple(
-        commands.Milestone(
+        pr_types.Milestone(
             milestone_number=_milestone_data["number"],
             title=_milestone_data["title"],
         ) for _milestone_page in milestone_pages for _milestone_data in _milestone_page
@@ -122,7 +122,7 @@ def apply_update_plan(
     repo: str,
     pr_number: int,
     comment_id: int | None,
-    update_plan: commands.UpdatePlan,
+    update_plan: pr_types.UpdatePlan,
 ) -> None:
     issue_endpoint = f"repos/{repo}/issues/{pr_number}"
     for label_name in update_plan.label_names_to_remove:

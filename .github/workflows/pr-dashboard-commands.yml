@@ -30,4 +30,5 @@ jobs:
       - name: Run the command
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 .github/pr_dashboard/src/main.py handle-comment
+          PYTHONPATH: .github/pr_dashboard/src
+        run: python3 -m pr_dashboard.run_dashboard handle-comment

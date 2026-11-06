@@ -27,4 +27,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: python3 .github/pr_dashboard/src/main.py label-pr --pr "$PR_NUMBER"
+          PYTHONPATH: .github/pr_dashboard/src
+        run: python3 -m pr_dashboard.run_dashboard label-pr --pr "$PR_NUMBER"
