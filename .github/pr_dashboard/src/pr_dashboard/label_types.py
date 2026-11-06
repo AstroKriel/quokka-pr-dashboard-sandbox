@@ -24,7 +24,7 @@ class SizeLabel(Label):
 
 @dataclasses.dataclass(frozen=True)
 class PriorityLabel(Label):
-    pass
+    is_default: bool
 
 
 @dataclasses.dataclass(frozen=True)

@@ -6,18 +6,24 @@ from pr_dashboard import label_types
 from pr_dashboard import load_labels
 
 CONFIGURED_LABELS = load_labels.load_configured_labels(pathlib.Path(__file__).parents[1] / "labels.toml")
+SCOPE_LABEL_TEXT = (
+    '[[scope_label]]\nname = "scope/hydro"\ncolor = "4ADD08"\ndescription = "Hydro"\npaths = ["src/hydro/*"]\n'
+)
+LOW_PRIORITY_LABEL_TEXT = '[[priority_label]]\nname = "priority/low"\ncolor = "0E8A16"\ndescription = "Low"\n'
+DEFAULT_PRIORITY_LABEL_TEXT = (
+    '[[priority_label]]\nname = "priority/medium"\ncolor = "FBCA04"\ndescription = "Normal"\ndefault = true\n'
+)
 
 
 def make_config_text(
-    default_priority_label_name: str,
     scope_label_text: str,
+    priority_label_text: str,
 ) -> str:
     return (
-        f'default_priority = "{default_priority_label_name}"\n'
         '[not_mapped_label]\nname = "scope/not_mapped"\ncolor = "B60205"\ndescription = "Not mapped"\n'
         f"{scope_label_text}"
         '[[size_label]]\nname = "size/XS"\ncolor = "00FF00"\ndescription = "Small"\nmin_num_lines = 0\n'
-        '[[priority_label]]\nname = "priority/medium"\ncolor = "FBCA04"\ndescription = "Normal"\n'
+        f"{priority_label_text}"
     )
 
 
@@ -48,6 +54,18 @@ class TestLoadLabels_Kinds(unittest.TestCase):
     ):
         self.assertIsInstance(CONFIGURED_LABELS.default_priority_label, label_types.PriorityLabel)
         self.assertEqual(CONFIGURED_LABELS.default_priority_label.name, "priority/medium")
+        self.assertTrue(CONFIGURED_LABELS.default_priority_label.is_default)
+
+    def test_minimal_config_loads(
+        self,
+    ):
+        config_text = make_config_text(
+            scope_label_text=SCOPE_LABEL_TEXT,
+            priority_label_text=LOW_PRIORITY_LABEL_TEXT + DEFAULT_PRIORITY_LABEL_TEXT,
+        )
+        configured_labels = load_config_text(config_text)
+        self.assertEqual(configured_labels.default_priority_label.name, "priority/medium")
+        self.assertFalse(configured_labels.priority_labels[0].is_default)
 
 
 class TestLoadLabels_Errors(unittest.TestCase):
@@ -56,24 +74,32 @@ class TestLoadLabels_Errors(unittest.TestCase):
         self,
     ):
         config_text = make_config_text(
-            default_priority_label_name="priority/medium",
             scope_label_text=
             '[[scope_label]]\nname = "scope/hydro"\ncolor = "4ADD08"\ndescription = "Hydro"\n',
+            priority_label_text=DEFAULT_PRIORITY_LABEL_TEXT,
         )
         with self.assertRaises(KeyError):
             load_config_text(config_text)
 
-    def test_unknown_default_priority_fails(
+    def test_no_default_priority_fails(
         self,
     ):
         config_text = make_config_text(
-            default_priority_label_name="priority/urgent",
-            scope_label_text=(
-                '[[scope_label]]\nname = "scope/hydro"\ncolor = "4ADD08"\ndescription = "Hydro"\n'
-                'paths = ["src/hydro/*"]\n'
-            ),
+            scope_label_text=SCOPE_LABEL_TEXT,
+            priority_label_text=LOW_PRIORITY_LABEL_TEXT,
         )
-        with self.assertRaisesRegex(ValueError, "must be one of"):
+        with self.assertRaisesRegex(ValueError, "got 0"):
+            load_config_text(config_text)
+
+    def test_two_default_priorities_fail(
+        self,
+    ):
+        second_default_text = DEFAULT_PRIORITY_LABEL_TEXT.replace("priority/medium", "priority/high")
+        config_text = make_config_text(
+            scope_label_text=SCOPE_LABEL_TEXT,
+            priority_label_text=DEFAULT_PRIORITY_LABEL_TEXT + second_default_text,
+        )
+        with self.assertRaisesRegex(ValueError, "got 2"):
             load_config_text(config_text)
 
 

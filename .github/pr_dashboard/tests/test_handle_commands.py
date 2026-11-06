@@ -333,7 +333,11 @@ class TestHandleCommands_SetMilestone(unittest.TestCase):
     ):
         comment = make_comment("/set-milestone photochem")
         update_plan = handle_commands.handle_comment(
-            CONFIGURED_LABELS, make_pull_request(), comment, (), TODAY
+            CONFIGURED_LABELS,
+            make_pull_request(),
+            comment,
+            (),
+            TODAY,
         )
         expected_reply = 'No open milestone is called "photochem", and there are no open milestones.'
         self.assertEqual(update_plan, pr_types.UpdatePlan(reply=expected_reply))

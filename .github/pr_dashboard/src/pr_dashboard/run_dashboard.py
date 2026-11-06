@@ -67,7 +67,11 @@ def run_comment_command(
     open_milestones = github_api.list_open_milestones(repo)
     today = datetime.datetime.now(datetime.timezone.utc).date()
     update_plan = handle_commands.handle_comment(
-        configured_labels, pull_request, comment, open_milestones, today
+        configured_labels,
+        pull_request,
+        comment,
+        open_milestones,
+        today,
     )
     print_update_plan(update_plan)
     github_api.apply_update_plan(

@@ -4,20 +4,17 @@ import tomllib
 from pr_dashboard import label_types
 
 
-def _resolve_default_priority_label(
+def _get_default_priority_label(
     priority_labels: tuple[label_types.PriorityLabel, ...],
-    default_priority_label_name: str,
 ) -> label_types.PriorityLabel:
-    matching_priority_labels = [
-        _priority_label for _priority_label in priority_labels
-        if _priority_label.name == default_priority_label_name
+    default_priority_labels = [
+        _priority_label for _priority_label in priority_labels if _priority_label.is_default
     ]
-    if len(matching_priority_labels) == 0:
-        priority_label_names = ", ".join(f"`{_priority_label.name}`" for _priority_label in priority_labels)
+    if len(default_priority_labels) != 1:
         raise ValueError(
-            f"`default_priority` must be one of {{{priority_label_names}}}; got `{default_priority_label_name}`.",
+            f"exactly one priority label must have `default = true`; got {len(default_priority_labels)}.",
         )
-    return matching_priority_labels[0]
+    return default_priority_labels[0]
 
 
 def load_configured_labels(
@@ -46,6 +43,7 @@ def load_configured_labels(
             name=_label_data["name"],
             color=_label_data["color"],
             description=_label_data["description"],
+            is_default=_label_data.get("default", False),
         ) for _label_data in config_data["priority_label"]
     )
     not_mapped_label = label_types.NotMappedLabel(
@@ -53,10 +51,7 @@ def load_configured_labels(
         color=config_data["not_mapped_label"]["color"],
         description=config_data["not_mapped_label"]["description"],
     )
-    default_priority_label = _resolve_default_priority_label(
-        priority_labels=priority_labels,
-        default_priority_label_name=config_data["default_priority"],
-    )
+    default_priority_label = _get_default_priority_label(priority_labels)
     return label_types.ConfiguredLabels(
         scope_labels=scope_labels,
         size_labels=size_labels,

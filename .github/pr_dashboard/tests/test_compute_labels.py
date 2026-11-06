@@ -14,7 +14,8 @@ class TestComputeLabels_Scope(unittest.TestCase):
         self,
     ):
         scope_label_names = compute_labels.compute_scope_label_names(
-            CONFIGURED_LABELS, ("src/hydro/HLLC.hpp", )
+            CONFIGURED_LABELS,
+            ("src/hydro/HLLC.hpp", ),
         )
         self.assertEqual(scope_label_names, {"scope/hydro"})
 
@@ -22,7 +23,8 @@ class TestComputeLabels_Scope(unittest.TestCase):
         self,
     ):
         scope_label_names = compute_labels.compute_scope_label_names(
-            CONFIGURED_LABELS, ("src/hydro/HLLD.hpp", )
+            CONFIGURED_LABELS,
+            ("src/hydro/HLLD.hpp", ),
         )
         self.assertEqual(scope_label_names, {"scope/hydro", "scope/MHD"})
 
@@ -148,7 +150,10 @@ class TestComputeLabels_Changes(unittest.TestCase):
         self,
     ):
         label_changes = compute_labels.compute_label_changes(
-            CONFIGURED_LABELS, (), ("src/io/plotfile.cpp", ), 40
+            CONFIGURED_LABELS,
+            (),
+            ("src/io/plotfile.cpp", ),
+            40,
         )
         self.assertEqual(label_changes.label_names_to_add, ("priority/medium", "scope/IO", "size/M"))
         self.assertEqual(label_changes.label_names_to_remove, ())

@@ -2,13 +2,6 @@
 ## scope/ and size/ labels are set by the tool; edits by hand are replaced
 
 ##
-## === DEFAULTS
-##
-
-## given to a PR that has no priority label
-default_priority = "priority/medium"
-
-##
 ## === SCOPE LABELS
 ##
 
@@ -252,7 +245,8 @@ min_num_lines = 500
 ## === PRIORITY LABELS
 ##
 
-## set by people with /set-priority; the default is set under DEFAULTS above
+## set by people with /set-priority; the one marked `default = true` is given to a PR that
+## has no priority label
 
 [[priority_label]]
 name = "priority/low"
@@ -263,6 +257,7 @@ description = "Review when there is time"
 name = "priority/medium"
 color = "FBCA04"
 description = "Review at the normal pace"
+default = true
 
 [[priority_label]]
 name = "priority/high"
