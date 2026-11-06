@@ -18,7 +18,7 @@ prefix = "scope/"
 [scope.not_mapped_label]
 value = "not_mapped"
 color = "B60205"
-description = "A changed file has no scope yet; a maintainer will add it to labels.toml"
+description = "A changed file has no scope yet; a maintainer needs to add it to labels.toml"
 
 ## --- physics
 ## each module's src/ folder, its problems in src/problems/, and their files in inputs/
