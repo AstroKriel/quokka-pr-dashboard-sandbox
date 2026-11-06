@@ -8,6 +8,28 @@ import labels
 CONFIGURED_LABELS = labels.load_configured_labels(pathlib.Path(__file__).parents[1] / "labels.toml")
 
 
+def make_config_text(
+    default_priority_label_name: str,
+    scope_label_text: str,
+) -> str:
+    return (
+        f'default_priority = "{default_priority_label_name}"\n'
+        '[not_mapped_label]\nname = "scope/not_mapped"\ncolor = "B60205"\ndescription = "Not mapped"\n'
+        f"{scope_label_text}"
+        '[[size_label]]\nname = "size/XS"\ncolor = "00FF00"\ndescription = "Small"\nmin_num_lines = 0\n'
+        '[[priority_label]]\nname = "priority/medium"\ncolor = "FBCA04"\ndescription = "Normal"\n'
+    )
+
+
+def load_config_text(
+    config_text: str,
+) -> labels.ConfiguredLabels:
+    with tempfile.TemporaryDirectory() as temp_dir:
+        config_path = pathlib.Path(temp_dir) / "labels.toml"
+        config_path.write_text(config_text)
+        return labels.load_configured_labels(config_path)
+
+
 class TestScopeLabels(unittest.TestCase):
 
     def test_hydro_file(
@@ -124,22 +146,37 @@ class TestLoadConfiguredLabels(unittest.TestCase):
         self.assertEqual(len(CONFIGURED_LABELS.all_labels()), 24)
         for priority_label in CONFIGURED_LABELS.priority_labels:
             self.assertIsInstance(priority_label, labels.PriorityLabel)
+        self.assertIsInstance(CONFIGURED_LABELS.not_mapped_label, labels.NotMappedLabel)
+
+    def test_default_priority_is_a_priority_label(
+        self,
+    ):
+        self.assertIsInstance(CONFIGURED_LABELS.default_priority_label, labels.PriorityLabel)
+        self.assertEqual(CONFIGURED_LABELS.default_priority_label.name, "priority/medium")
 
     def test_scope_label_without_paths_fails(
         self,
     ):
-        config_text = (
-            'default_priority = "priority/medium"\n'
-            '[not_mapped_label]\nname = "scope/not_mapped"\ncolor = "B60205"\ndescription = "Not mapped"\n'
-            '[[scope_label]]\nname = "scope/hydro"\ncolor = "4ADD08"\ndescription = "Hydrodynamics"\n'
-            '[[size_label]]\nname = "size/XS"\ncolor = "00FF00"\ndescription = "Small"\nmin_num_lines = 0\n'
-            '[[priority_label]]\nname = "priority/medium"\ncolor = "FBCA04"\ndescription = "Normal"\n'
+        config_text = make_config_text(
+            default_priority_label_name="priority/medium",
+            scope_label_text=
+            '[[scope_label]]\nname = "scope/hydro"\ncolor = "4ADD08"\ndescription = "Hydro"\n',
         )
-        with tempfile.TemporaryDirectory() as temp_dir:
-            config_path = pathlib.Path(temp_dir) / "labels.toml"
-            config_path.write_text(config_text)
-            with self.assertRaises(KeyError):
-                labels.load_configured_labels(config_path)
+        with self.assertRaises(KeyError):
+            load_config_text(config_text)
+
+    def test_unknown_default_priority_fails(
+        self,
+    ):
+        config_text = make_config_text(
+            default_priority_label_name="priority/urgent",
+            scope_label_text=(
+                '[[scope_label]]\nname = "scope/hydro"\ncolor = "4ADD08"\ndescription = "Hydro"\n'
+                'paths = ["src/hydro/*"]\n'
+            ),
+        )
+        with self.assertRaises(ValueError):
+            load_config_text(config_text)
 
 
 class TestSizeLabel(unittest.TestCase):

@@ -31,12 +31,17 @@ class PriorityLabel(Label):
 
 
 @dataclasses.dataclass(frozen=True)
+class NotMappedLabel(Label):
+    pass
+
+
+@dataclasses.dataclass(frozen=True)
 class ConfiguredLabels:
     scope_labels: tuple[ScopeLabel, ...]
     size_labels: tuple[SizeLabel, ...]
     priority_labels: tuple[PriorityLabel, ...]
-    not_mapped_label: Label
-    default_priority_label_name: str
+    not_mapped_label: NotMappedLabel
+    default_priority_label: PriorityLabel
 
     def all_labels(
         self,
@@ -78,17 +83,26 @@ def load_configured_labels(
             description=_label_data["description"],
         ) for _label_data in config_data["priority_label"]
     )
-    not_mapped_label = Label(
+    not_mapped_label = NotMappedLabel(
         name=config_data["not_mapped_label"]["name"],
         color=config_data["not_mapped_label"]["color"],
         description=config_data["not_mapped_label"]["description"],
     )
+    default_priority_label_name = config_data["default_priority"]
+    matching_priority_labels = [
+        _priority_label for _priority_label in priority_labels
+        if _priority_label.name == default_priority_label_name
+    ]
+    if len(matching_priority_labels) == 0:
+        raise ValueError(
+            f'default_priority "{default_priority_label_name}" is not a priority label in labels.toml'
+        )
     return ConfiguredLabels(
         scope_labels=scope_labels,
         size_labels=size_labels,
         priority_labels=priority_labels,
         not_mapped_label=not_mapped_label,
-        default_priority_label_name=config_data["default_priority"],
+        default_priority_label=matching_priority_labels[0],
     )
 
 
@@ -143,7 +157,7 @@ def compute_label_changes(
     wanted_label_names.add(size_label_name)
     priority_is_set = any(_label_name.startswith(PRIORITY_PREFIX) for _label_name in current_label_names)
     if not priority_is_set:
-        wanted_label_names.add(configured_labels.default_priority_label_name)
+        wanted_label_names.add(configured_labels.default_priority_label.name)
     label_names_to_add = sorted(wanted_label_names - set(current_label_names))
     label_names_to_remove = sorted(
         _label_name for _label_name in current_label_names
