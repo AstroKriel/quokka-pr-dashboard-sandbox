@@ -139,9 +139,9 @@ def _set_priority(
 ) -> pr_types.UpdatePlan:
     priority_label = priority_labels.get_label(argument)
     if priority_label is None:
-        priority_names = "|".join(_priority_label.name for _priority_label in priority_labels.labels)
-        return pr_types.UpdatePlan(reply=f"Use `/set-priority <{priority_names}>`.")
-    wanted_label_name = priority_label.full_name
+        priority_values = "|".join(_priority_label.value for _priority_label in priority_labels.labels)
+        return pr_types.UpdatePlan(reply=f"Use `/set-priority <{priority_values}>`.")
+    wanted_label_name = priority_label.label_name
     label_names_to_remove = tuple(
         _label_name for _label_name in pull_request.label_names
         if priority_labels.check_owns(_label_name) and (_label_name != wanted_label_name)

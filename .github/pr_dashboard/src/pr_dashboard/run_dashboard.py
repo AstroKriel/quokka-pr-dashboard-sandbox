@@ -103,7 +103,7 @@ def get_label_sync_action(
     label: label_types.Label,
     repo_labels: dict[str, dict],
 ) -> str | None:
-    existing_label_data = repo_labels.get(label.full_name)
+    existing_label_data = repo_labels.get(label.label_name)
     if existing_label_data is None:
         return "create"
     elif ((existing_label_data["color"].lower() == label.color.lower())
@@ -127,20 +127,20 @@ def sync_label_set(
         )
         if sync_action is None:
             continue
-        print(f"{sync_action} {label.full_name}")
+        print(f"{sync_action} {label.label_name}")
         if dry_run:
             continue
         elif sync_action == "create":
             github_api.create_label(
                 repo=repo,
-                name=label.full_name,
+                name=label.label_name,
                 color=label.color,
                 description=label.description,
             )
         else:
             github_api.update_label(
                 repo=repo,
-                name=label.full_name,
+                name=label.label_name,
                 color=label.color,
                 description=label.description,
             )

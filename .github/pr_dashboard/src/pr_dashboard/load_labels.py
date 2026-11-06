@@ -11,15 +11,15 @@ def _load_scope_labels(
     labels = tuple(
         label_types.ScopeLabel(
             prefix=prefix,
-            name=_label_data["name"],
+            value=_label_data["value"],
             color=_label_data["color"],
             description=_label_data["description"],
-            paths=tuple(_label_data["paths"]),
+            path_patterns=tuple(_label_data["path_patterns"]),
         ) for _label_data in scope_data["label"]
     )
     not_mapped_label = label_types.NotMappedLabel(
         prefix=prefix,
-        name=scope_data["not_mapped_label"]["name"],
+        value=scope_data["not_mapped_label"]["value"],
         color=scope_data["not_mapped_label"]["color"],
         description=scope_data["not_mapped_label"]["description"],
     )
@@ -37,7 +37,7 @@ def _load_size_labels(
     labels = tuple(
         label_types.SizeLabel(
             prefix=prefix,
-            name=_label_data["name"],
+            value=_label_data["value"],
             color=_label_data["color"],
             description=_label_data["description"],
             min_num_lines=_label_data["min_num_lines"],
@@ -69,7 +69,7 @@ def _load_priority_labels(
     labels = tuple(
         label_types.PriorityLabel(
             prefix=prefix,
-            name=_label_data["name"],
+            value=_label_data["value"],
             color=_label_data["color"],
             description=_label_data["description"],
             is_default=_label_data.get("default", False),

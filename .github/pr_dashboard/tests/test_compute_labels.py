@@ -108,7 +108,7 @@ class TestComputeLabels_Scope(unittest.TestCase):
             check=True,
         )
         repository_file_paths = completed_process.stdout.splitlines()
-        not_mapped_label_name = CONFIGURED_LABELS.scope_labels.not_mapped_label.full_name
+        not_mapped_label_name = CONFIGURED_LABELS.scope_labels.not_mapped_label.label_name
         not_mapped_paths = [
             _file_path for _file_path in repository_file_paths
             if not_mapped_label_name in get_scope_label_names((_file_path, ))

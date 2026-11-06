@@ -6,28 +6,28 @@ from pr_dashboard import label_types
 from pr_dashboard import load_labels
 
 CONFIGURED_LABELS = load_labels.load_configured_labels(pathlib.Path(__file__).parents[1] / "labels.toml")
-SCOPE_LABEL_TEXT = '[[scope.label]]\nname = "hydro"\ncolor = "4ADD08"\ndescription = "Hydro"\npaths = ["src/hydro/*"]\n'
+SCOPE_LABEL_TEXT = '[[scope.label]]\nvalue = "hydro"\ncolor = "4ADD08"\ndescription = "Hydro"\npath_patterns = ["src/hydro/*"]\n'
 
 
 def make_priority_label_text(
     *,
-    label_name: str,
+    value: str,
     is_default: bool = False,
 ) -> str:
     if is_default:
         default_line = "default = true\n"
     else:
         default_line = ""
-    return f'[[priority.label]]\nname = "{label_name}"\ncolor = "FBCA04"\ndescription = "Priority"\n{default_line}'
+    return f'[[priority.label]]\nvalue = "{value}"\ncolor = "FBCA04"\ndescription = "Priority"\n{default_line}'
 
 
-LOW_PRIORITY_LABEL_TEXT = make_priority_label_text(label_name="low")
-MEDIUM_PRIORITY_LABEL_TEXT = make_priority_label_text(label_name="medium")
+LOW_PRIORITY_LABEL_TEXT = make_priority_label_text(value="low")
+MEDIUM_PRIORITY_LABEL_TEXT = make_priority_label_text(value="medium")
 DEFAULT_PRIORITY_LABEL_TEXT = make_priority_label_text(
-    label_name="medium",
+    value="medium",
     is_default=True,
 )
-HIGH_PRIORITY_LABEL_TEXT = make_priority_label_text(label_name="high")
+HIGH_PRIORITY_LABEL_TEXT = make_priority_label_text(value="high")
 VALID_PRIORITY_LABELS_TEXT = LOW_PRIORITY_LABEL_TEXT + DEFAULT_PRIORITY_LABEL_TEXT + HIGH_PRIORITY_LABEL_TEXT
 
 
@@ -38,10 +38,10 @@ def make_config_text(
 ) -> str:
     return (
         '[scope]\nprefix = "scope/"\n'
-        '[scope.not_mapped_label]\nname = "not_mapped"\ncolor = "B60205"\ndescription = "Not mapped"\n'
+        '[scope.not_mapped_label]\nvalue = "not_mapped"\ncolor = "B60205"\ndescription = "Not mapped"\n'
         f"{scope_label_text}"
         '[size]\nprefix = "size/"\n'
-        '[[size.label]]\nname = "XS"\ncolor = "00FF00"\ndescription = "Small"\nmin_num_lines = 0\n'
+        '[[size.label]]\nvalue = "XS"\ncolor = "00FF00"\ndescription = "Small"\nmin_num_lines = 0\n'
         '[priority]\nprefix = "priority/"\n'
         f"{priority_label_text}"
     )
@@ -69,16 +69,16 @@ class TestLoadLabels_Categories(unittest.TestCase):
             self.assertIsInstance(priority_label, label_types.PriorityLabel)
         self.assertIsInstance(CONFIGURED_LABELS.scope_labels.not_mapped_label, label_types.NotMappedLabel)
 
-    def test_full_names_join_prefix_and_name(
+    def test_label_names_join_prefix_and_value(
         self,
     ):
         hydro_label = CONFIGURED_LABELS.scope_labels.labels[0]
-        self.assertEqual(hydro_label.name, "hydro")
-        self.assertEqual(hydro_label.full_name, "scope/hydro")
-        self.assertEqual(CONFIGURED_LABELS.scope_labels.not_mapped_label.full_name, "scope/not_mapped")
-        self.assertEqual(CONFIGURED_LABELS.size_labels.labels[0].full_name, "size/XS")
+        self.assertEqual(hydro_label.value, "hydro")
+        self.assertEqual(hydro_label.label_name, "scope/hydro")
+        self.assertEqual(CONFIGURED_LABELS.scope_labels.not_mapped_label.label_name, "scope/not_mapped")
+        self.assertEqual(CONFIGURED_LABELS.size_labels.labels[0].label_name, "size/XS")
 
-    def test_categories_own_their_full_names(
+    def test_categories_own_their_label_names(
         self,
     ):
         self.assertTrue(CONFIGURED_LABELS.scope_labels.check_owns("scope/hydro"))
@@ -89,31 +89,31 @@ class TestLoadLabels_Categories(unittest.TestCase):
         self,
     ):
         default_label = CONFIGURED_LABELS.priority_labels.default_label
-        self.assertEqual(default_label.full_name, "priority/medium")
+        self.assertEqual(default_label.label_name, "priority/medium")
         self.assertTrue(default_label.is_default)
 
     def test_priority_label_lookup(
         self,
     ):
-        self.assertEqual(CONFIGURED_LABELS.priority_labels.get_label("high").full_name, "priority/high")
-        self.assertEqual(CONFIGURED_LABELS.priority_labels.get_label("High").full_name, "priority/high")
+        self.assertEqual(CONFIGURED_LABELS.priority_labels.get_label("high").label_name, "priority/high")
+        self.assertEqual(CONFIGURED_LABELS.priority_labels.get_label("High").label_name, "priority/high")
         self.assertIsNone(CONFIGURED_LABELS.priority_labels.get_label("urgent"))
 
     def test_minimal_config_loads(
         self,
     ):
         configured_labels = load_config_text(make_config_text())
-        self.assertEqual(configured_labels.priority_labels.default_label.full_name, "priority/medium")
+        self.assertEqual(configured_labels.priority_labels.default_label.label_name, "priority/medium")
         self.assertFalse(configured_labels.priority_labels.labels[0].is_default)
 
 
 class TestLoadLabels_Errors(unittest.TestCase):
 
-    def test_scope_label_without_paths_fails(
+    def test_scope_label_without_path_patterns_fails(
         self,
     ):
         config_text = make_config_text(
-            scope_label_text='[[scope.label]]\nname = "hydro"\ncolor = "4ADD08"\ndescription = "Hydro"\n',
+            scope_label_text='[[scope.label]]\nvalue = "hydro"\ncolor = "4ADD08"\ndescription = "Hydro"\n',
         )
         with self.assertRaises(KeyError):
             load_config_text(config_text)
@@ -139,7 +139,7 @@ class TestLoadLabels_Errors(unittest.TestCase):
         self,
     ):
         default_high_label_text = make_priority_label_text(
-            label_name="high",
+            value="high",
             is_default=True,
         )
         config_text = make_config_text(

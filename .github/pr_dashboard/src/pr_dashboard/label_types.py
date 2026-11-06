@@ -4,20 +4,20 @@ import dataclasses
 @dataclasses.dataclass(frozen=True)
 class Label:
     prefix: str
-    name: str
+    value: str
     color: str
     description: str
 
     @property
-    def full_name(
+    def label_name(
         self,
     ) -> str:
-        return self.prefix + self.name
+        return self.prefix + self.value
 
 
 @dataclasses.dataclass(frozen=True)
 class ScopeLabel(Label):
-    paths: tuple[str, ...]
+    path_patterns: tuple[str, ...]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -41,9 +41,9 @@ class LabelCategory:
 
     def check_owns(
         self,
-        full_label_name: str,
+        label_name: str,
     ) -> bool:
-        return full_label_name.startswith(self.prefix)
+        return label_name.startswith(self.prefix)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -64,9 +64,9 @@ class PriorityLabels(LabelCategory):
 
     def get_label(
         self,
-        label_name: str,
+        value: str,
     ) -> PriorityLabel | None:
-        matching_labels = [_label for _label in self.labels if _label.name.lower() == label_name.lower()]
+        matching_labels = [_label for _label in self.labels if _label.value.lower() == value.lower()]
         if len(matching_labels) == 0:
             return None
         else:
