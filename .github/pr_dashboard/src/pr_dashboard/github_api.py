@@ -124,7 +124,7 @@ def get_user(
     )
 
 
-def list_open_milestones(
+def get_open_milestones(
     repo: str,
 ) -> tuple[pr_types.Milestone, ...]:
     milestone_pages = _read_from_github(
@@ -139,7 +139,7 @@ def list_open_milestones(
     )
 
 
-def list_repo_labels(
+def get_repo_labels(
     repo: str,
 ) -> dict[str, dict]:
     label_pages = _read_from_github(

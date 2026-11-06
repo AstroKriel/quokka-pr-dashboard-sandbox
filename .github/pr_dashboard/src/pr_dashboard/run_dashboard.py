@@ -80,7 +80,7 @@ def run_comment_command(
         repo=repo,
         pr_number=pr_number,
     )
-    open_milestones = github_api.list_open_milestones(repo)
+    open_milestones = github_api.get_open_milestones(repo)
     today = datetime.datetime.now(datetime.timezone.utc).date()
     update_plan = handle_commands.handle_comment(
         configured_labels=configured_labels,
@@ -119,7 +119,7 @@ def sync_label_set(
     dry_run: bool,
 ) -> None:
     configured_labels = load_labels.load_configured_labels(LABELS_TOML_PATH)
-    repo_labels = github_api.list_repo_labels(repo)
+    repo_labels = github_api.get_repo_labels(repo)
     for label in configured_labels.all_labels():
         sync_action = get_label_sync_action(
             label=label,
