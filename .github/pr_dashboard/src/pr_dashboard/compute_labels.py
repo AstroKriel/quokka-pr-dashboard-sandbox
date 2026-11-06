@@ -1,6 +1,7 @@
 import fnmatch
 
 from pr_dashboard import label_types
+from pr_dashboard import pr_types
 
 
 def _path_matches_any(
@@ -62,7 +63,7 @@ def _check_label_is_stale(
     return label_is_managed_by_tool and (label_name not in computed_label_names)
 
 
-def compute_label_changes(
+def _compute_label_changes(
     *,
     configured_labels: label_types.ConfiguredLabels,
     current_label_names: tuple[str, ...],
@@ -94,4 +95,21 @@ def compute_label_changes(
     return label_types.LabelChanges(
         label_names_to_add=tuple(label_names_to_add),
         label_names_to_remove=tuple(label_names_to_remove),
+    )
+
+
+def make_label_update_plan(
+    *,
+    configured_labels: label_types.ConfiguredLabels,
+    pull_request: pr_types.PullRequest,
+) -> pr_types.UpdatePlan:
+    label_changes = _compute_label_changes(
+        configured_labels=configured_labels,
+        current_label_names=pull_request.label_names,
+        edited_file_paths=pull_request.edited_file_paths,
+        num_lines_changed=pull_request.num_lines_changed,
+    )
+    return pr_types.UpdatePlan(
+        label_names_to_add=label_changes.label_names_to_add,
+        label_names_to_remove=label_changes.label_names_to_remove,
     )

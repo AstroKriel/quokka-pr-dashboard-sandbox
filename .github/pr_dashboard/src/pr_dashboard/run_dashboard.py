@@ -4,6 +4,7 @@ import datetime
 import json
 import pathlib
 
+from pr_dashboard import compute_labels
 from pr_dashboard import github_api
 from pr_dashboard import interpret_commands
 from pr_dashboard import label_types
@@ -35,19 +36,17 @@ def label_pr(
         repo=repo,
         pr_number=pr_number,
     )
-    update_plan = interpret_commands.recompute_labels(
+    update_plan = compute_labels.make_label_update_plan(
         configured_labels=configured_labels,
         pull_request=pull_request,
-        argument="",
     )
-    unreacted_update_plan = dataclasses.replace(update_plan, react=False)
-    print_update_plan(unreacted_update_plan)
+    print_update_plan(update_plan)
     if not dry_run:
         github_api.apply_update_plan(
             repo=repo,
             pr_number=pr_number,
             comment_id=None,
-            update_plan=unreacted_update_plan,
+            update_plan=update_plan,
         )
 
 

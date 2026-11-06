@@ -273,7 +273,7 @@ def _set_milestone(
         )
 
 
-def recompute_labels(
+def _recompute_labels(
     *,
     configured_labels: label_types.ConfiguredLabels,
     pull_request: pr_types.PullRequest,
@@ -281,17 +281,11 @@ def recompute_labels(
 ) -> pr_types.UpdatePlan:
     if argument != "":
         return _usage_reply(RECOMPUTE_LABELS)
-    label_changes = compute_labels.compute_label_changes(
+    label_update_plan = compute_labels.make_label_update_plan(
         configured_labels=configured_labels,
-        current_label_names=pull_request.label_names,
-        edited_file_paths=pull_request.edited_file_paths,
-        num_lines_changed=pull_request.num_lines_changed,
+        pull_request=pull_request,
     )
-    return pr_types.UpdatePlan(
-        label_names_to_add=label_changes.label_names_to_add,
-        label_names_to_remove=label_changes.label_names_to_remove,
-        react=True,
-    )
+    return dataclasses.replace(label_update_plan, react=True)
 
 
 def make_comment_update_plan(
@@ -339,7 +333,7 @@ def make_comment_update_plan(
             argument=argument,
         )
     elif command == RECOMPUTE_LABELS:
-        return recompute_labels(
+        return _recompute_labels(
             configured_labels=configured_labels,
             pull_request=pull_request,
             argument=argument,

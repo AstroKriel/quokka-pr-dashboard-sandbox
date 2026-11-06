@@ -4,6 +4,7 @@ import unittest
 
 from pr_dashboard import compute_labels
 from pr_dashboard import load_labels
+from pr_dashboard import pr_types
 
 CONFIGURED_LABELS = load_labels.load_configured_labels(pathlib.Path(__file__).parents[1] / "labels.toml")
 
@@ -147,7 +148,7 @@ class TestComputeLabels_Changes(unittest.TestCase):
     def test_new_pr_gets_scope_size_and_default_priority(
         self,
     ):
-        label_changes = compute_labels.compute_label_changes(
+        label_changes = compute_labels._compute_label_changes(
             configured_labels=CONFIGURED_LABELS,
             current_label_names=(),
             edited_file_paths=("src/io/plotfile.cpp", ),
@@ -159,7 +160,7 @@ class TestComputeLabels_Changes(unittest.TestCase):
     def test_stale_scope_and_size_are_replaced_and_others_kept(
         self,
     ):
-        label_changes = compute_labels.compute_label_changes(
+        label_changes = compute_labels._compute_label_changes(
             configured_labels=CONFIGURED_LABELS,
             current_label_names=("scope/radiation", "size/XS", "priority/high", "code-audit"),
             edited_file_paths=("src/io/plotfile.cpp", ),
@@ -171,7 +172,7 @@ class TestComputeLabels_Changes(unittest.TestCase):
     def test_up_to_date_pr_needs_no_changes(
         self,
     ):
-        label_changes = compute_labels.compute_label_changes(
+        label_changes = compute_labels._compute_label_changes(
             configured_labels=CONFIGURED_LABELS,
             current_label_names=("scope/IO", "size/M", "priority/low"),
             edited_file_paths=("src/io/plotfile.cpp", ),
@@ -179,6 +180,30 @@ class TestComputeLabels_Changes(unittest.TestCase):
         )
         self.assertEqual(label_changes.label_names_to_add, ())
         self.assertEqual(label_changes.label_names_to_remove, ())
+
+
+class TestComputeLabels_UpdatePlan(unittest.TestCase):
+
+    def test_changes_only_labels(
+        self,
+    ):
+        pull_request = pr_types.PullRequest(
+            pr_number=1,
+            author_user_name="pr-author",
+            assignee_user_names=(),
+            label_names=("scope/radiation", ),
+            num_lines_changed=40,
+            edited_file_paths=("src/io/plotfile.cpp", ),
+        )
+        update_plan = compute_labels.make_label_update_plan(
+            configured_labels=CONFIGURED_LABELS,
+            pull_request=pull_request,
+        )
+        expected_update_plan = pr_types.UpdatePlan(
+            label_names_to_add=("priority/medium", "scope/IO", "size/M"),
+            label_names_to_remove=("scope/radiation", ),
+        )
+        self.assertEqual(update_plan, expected_update_plan)
 
 
 if __name__ == "__main__":
