@@ -201,8 +201,7 @@ def main() -> None:
             dry_run=parsed_args.dry_run,
         )
     else:
-        action_names = ", ".join(f"`{_action_name}`" for _action_name in action_parsers.choices)
-        raise ValueError(f"`action` must be one of {{{action_names}}}; got `{parsed_args.action}`.")
+        raise ValueError(f"`main` has no branch for action `{parsed_args.action}`.")
 
 
 if __name__ == "__main__":

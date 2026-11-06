@@ -345,5 +345,4 @@ def make_comment_update_plan(
             argument=argument,
         )
     else:
-        command_names = ", ".join(f"`{_command.name}`" for _command in COMMANDS)
-        raise ValueError(f"`command` must be one of {{{command_names}}}; got `{command.name}`.")
+        raise ValueError(f"`make_comment_update_plan` has no branch for command `{command.name}`.")
