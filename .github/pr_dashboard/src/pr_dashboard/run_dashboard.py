@@ -195,11 +195,14 @@ def main() -> None:
             repo=parsed_args.repo,
             event_path=parsed_args.event_path,
         )
-    else:
+    elif parsed_args.action == "sync-label-set":
         sync_label_set(
             repo=parsed_args.repo,
             dry_run=parsed_args.dry_run,
         )
+    else:
+        action_names = ", ".join(f"`{_action_name}`" for _action_name in action_parsers.choices)
+        raise ValueError(f"`action` must be one of {{{action_names}}}; got `{parsed_args.action}`.")
 
 
 if __name__ == "__main__":
