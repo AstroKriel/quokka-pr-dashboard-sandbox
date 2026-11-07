@@ -133,11 +133,13 @@ def get_user(
     )
 
 
-def get_open_milestones(
+def _get_milestones(
+    *,
     repo: str,
+    state: str,
 ) -> tuple[pr_context.Milestone, ...]:
     milestone_pages = _read_from_github(
-        endpoint=f"repos/{repo}/milestones?state=open&per_page=100",
+        endpoint=f"repos/{repo}/milestones?state={state}&per_page=100",
         paginate=True,
     )
     return tuple(
@@ -145,6 +147,24 @@ def get_open_milestones(
             milestone_number=_milestone_data["number"],
             title=_milestone_data["title"],
         ) for _milestone_page in milestone_pages for _milestone_data in _milestone_page
+    )
+
+
+def get_open_milestones(
+    repo: str,
+) -> tuple[pr_context.Milestone, ...]:
+    return _get_milestones(
+        repo=repo,
+        state="open",
+    )
+
+
+def get_closed_milestones(
+    repo: str,
+) -> tuple[pr_context.Milestone, ...]:
+    return _get_milestones(
+        repo=repo,
+        state="closed",
     )
 
 
@@ -240,6 +260,12 @@ def apply_update_plan(
             endpoint=issue_endpoint,
             method=http.HTTPMethod.PATCH,
             fields=milestone_fields,
+        )
+    if update_plan.milestone_title_to_create is not None:
+        _write_to_github(
+            endpoint=f"repos/{repo}/milestones",
+            method=http.HTTPMethod.POST,
+            fields={"title": update_plan.milestone_title_to_create},
         )
     if update_plan.reply is not None:
         _write_to_github(

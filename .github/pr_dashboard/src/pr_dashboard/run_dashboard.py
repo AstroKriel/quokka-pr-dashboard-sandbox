@@ -80,12 +80,14 @@ def run_command_from_comment(
         pr_number=pr_number,
     )
     open_milestones = github_api.get_open_milestones(repo)
+    closed_milestones = github_api.get_closed_milestones(repo)
     configured_labels = load_labels.load_configured_labels(LABELS_TOML_PATH)
     update_plan_from_comment = pr_commands.plan_update_from_comment(
         configured_labels=configured_labels,
         pull_request=pull_request,
         comment=comment,
         open_milestones=open_milestones,
+        closed_milestones=closed_milestones,
     )
     print_update_plan(update_plan_from_comment)
     github_api.apply_update_plan(

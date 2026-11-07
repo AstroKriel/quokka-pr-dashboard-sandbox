@@ -23,6 +23,10 @@ OPEN_MILESTONES = (
         title="photochem",
     ),
 )
+CLOSED_MILESTONES = (pr_context.Milestone(
+    milestone_number=2,
+    title="Microphysics integration",
+), )
 
 
 def make_pull_request(
@@ -52,6 +56,7 @@ def run_command(
     user_name: str = "maintainer",
     role_in_repo: pr_context.RoleInRepo = pr_context.RoleInRepo.WRITE,
     open_milestones: tuple[pr_context.Milestone, ...] = OPEN_MILESTONES,
+    closed_milestones: tuple[pr_context.Milestone, ...] = CLOSED_MILESTONES,
 ) -> pr_context.UpdatePlan | None:
     user = pr_context.User(
         user_name=user_name,
@@ -67,6 +72,7 @@ def run_command(
         pull_request=pull_request,
         comment=comment,
         open_milestones=open_milestones,
+        closed_milestones=closed_milestones,
     )
 
 
@@ -394,6 +400,57 @@ class TestPrCommands_SetPriority(unittest.TestCase):
         self.assertEqual(update_plan_from_comment, pr_context.UpdatePlan(reply=expected_reply))
 
 
+class TestPrCommands_CreateMilestone(unittest.TestCase):
+
+    def test_new_title_is_created(
+        self,
+    ):
+        update_plan_from_comment = run_command(text="/create-milestone stellar-evolution")
+        expected_update_plan = pr_context.UpdatePlan(
+            milestone_title_to_create="stellar-evolution",
+            react=True,
+        )
+        self.assertEqual(update_plan_from_comment, expected_update_plan)
+
+    def test_missing_title(
+        self,
+    ):
+        update_plan_from_comment = run_command(text="/create-milestone")
+        self.assertEqual(
+            update_plan_from_comment, pr_context.UpdatePlan(reply="Use `/create-milestone <title>`.")
+        )
+
+    def test_open_title_is_refused_ignoring_case(
+        self,
+    ):
+        update_plan_from_comment = run_command(text="/create-milestone Photochem")
+        expected_reply = 'A milestone called "photochem" is already open.'
+        self.assertEqual(update_plan_from_comment, pr_context.UpdatePlan(reply=expected_reply))
+
+    def test_closed_title_is_refused(
+        self,
+    ):
+        update_plan_from_comment = run_command(text="/create-milestone Microphysics integration")
+        expected_reply = (
+            'A closed milestone called "Microphysics integration" exists. '
+            "Reopen it on GitHub instead."
+        )
+        self.assertEqual(update_plan_from_comment, pr_context.UpdatePlan(reply=expected_reply))
+
+    def test_without_write_access(
+        self,
+    ):
+        update_plan_from_comment = run_command(
+            text="/create-milestone stellar-evolution",
+            user_name="pr-author",
+            role_in_repo=pr_context.RoleInRepo.READ,
+        )
+        expected_update_plan = pr_context.UpdatePlan(
+            reply="Only maintainers (anyone with write access) can create a milestone.",
+        )
+        self.assertEqual(update_plan_from_comment, expected_update_plan)
+
+
 class TestPrCommands_SetMilestone(unittest.TestCase):
 
     def test_matches_title_ignoring_case(
@@ -502,7 +559,7 @@ class TestPrCommands_Help(unittest.TestCase):
             role_in_repo=pr_context.RoleInRepo.READ,
         )
         self.assertTrue(
-            update_plan_from_comment.reply.startswith("PR dashboard commands (each must start its comment):")
+            update_plan_from_comment.reply.startswith("PR dashboard commands (each must start its comment):"),
         )
 
     def test_extra_words_are_ignored(
@@ -510,7 +567,7 @@ class TestPrCommands_Help(unittest.TestCase):
     ):
         update_plan_from_comment = run_command(text="/help me please")
         self.assertTrue(
-            update_plan_from_comment.reply.startswith("PR dashboard commands (each must start its comment):")
+            update_plan_from_comment.reply.startswith("PR dashboard commands (each must start its comment):"),
         )
 
     def test_changes_nothing(

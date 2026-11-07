@@ -51,5 +51,6 @@ class UpdatePlan:
     assignee_user_names_to_add: tuple[str, ...] = ()
     assignee_user_names_to_remove: tuple[str, ...] = ()
     milestone_change: MilestoneChange | None = None
+    milestone_title_to_create: str | None = None
     reply: str | None = None
     react: bool = False

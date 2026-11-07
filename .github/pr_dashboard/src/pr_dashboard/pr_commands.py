@@ -63,6 +63,12 @@ class Commands(enum.Enum):
         description="set this PR's priority",
         allowed_users="the PR author, or maintainers",
     )
+    CREATE_MILESTONE = Command(
+        text="/create-milestone",
+        argument_hint="<title>",
+        description="create a new open milestone for a campaign",
+        allowed_users="maintainers (anyone with write access)",
+    )
     SET_MILESTONE = Command(
         text="/set-milestone",
         argument_hint="<title|none>",
@@ -339,6 +345,45 @@ def _set_priority(
     )
 
 
+def _create_milestone(
+    *,
+    comment: pr_context.Comment,
+    open_milestones: tuple[pr_context.Milestone, ...],
+    closed_milestones: tuple[pr_context.Milestone, ...],
+    argument: str,
+) -> pr_context.UpdatePlan:
+    matching_open_milestones = [
+        _milestone for _milestone in open_milestones if _milestone.title.lower() == argument.lower()
+    ]
+    matching_closed_milestones = [
+        _milestone for _milestone in closed_milestones if _milestone.title.lower() == argument.lower()
+    ]
+    if comment.user.role_in_repo not in _ROLES_WITH_WRITE_ACCESS:
+        return pr_context.UpdatePlan(
+            reply="Only maintainers (anyone with write access) can create a milestone."
+        )
+    elif argument == "":
+        # the command received no milestone title
+        return _plan_command_usage_reply(Commands.CREATE_MILESTONE)
+    elif len(matching_open_milestones) > 0:
+        return pr_context.UpdatePlan(
+            reply=f'A milestone called "{matching_open_milestones[0].title}" is already open.',
+        )
+    elif len(matching_closed_milestones) > 0:
+        return pr_context.UpdatePlan(
+            reply=(
+                f'A closed milestone called "{matching_closed_milestones[0].title}" exists. '
+                "Reopen it on GitHub instead."
+            ),
+        )
+    else:
+        # the title is new: create an open milestone with it
+        return pr_context.UpdatePlan(
+            milestone_title_to_create=argument,
+            react=True,
+        )
+
+
 def _set_milestone(
     *,
     open_milestones: tuple[pr_context.Milestone, ...],
@@ -402,6 +447,7 @@ def plan_update_from_comment(
     pull_request: pr_context.PullRequest,
     comment: pr_context.Comment,
     open_milestones: tuple[pr_context.Milestone, ...],
+    closed_milestones: tuple[pr_context.Milestone, ...],
 ) -> pr_context.UpdatePlan | None:
     parsed_command = parse_command(comment.text)
     mentioned_commands = extract_mentioned_commands(comment.text)
@@ -427,6 +473,13 @@ def plan_update_from_comment(
         return _release_review(
             pull_request=pull_request,
             comment=comment,
+            argument=argument,
+        )
+    elif command == Commands.CREATE_MILESTONE:
+        return _create_milestone(
+            comment=comment,
+            open_milestones=open_milestones,
+            closed_milestones=closed_milestones,
             argument=argument,
         )
     elif not commenter_is_author_or_triager:
