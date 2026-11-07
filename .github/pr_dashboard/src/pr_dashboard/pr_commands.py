@@ -145,9 +145,11 @@ def parse_command(
 def _format_usage(
     *,
     command: Command,
-    priority_labels: pr_labels.PriorityLabels,
+    configured_labels: pr_labels.ConfiguredLabels,
 ) -> str:
-    priority_values = "|".join(_priority_label.value for _priority_label in priority_labels.labels)
+    priority_values = "|".join(
+        _priority_label.value for _priority_label in configured_labels.priority_labels.labels
+    )
     return command.usage.format(priority_values=priority_values)
 
 
@@ -158,13 +160,13 @@ def _usage_reply(
 
 
 def _help_reply(
-    priority_labels: pr_labels.PriorityLabels,
+    configured_labels: pr_labels.ConfiguredLabels,
 ) -> pr_context.UpdatePlan:
     help_lines = ["PR dashboard commands:"]
     for command in Command:
         usage = _format_usage(
             command=command,
-            priority_labels=priority_labels,
+            configured_labels=configured_labels,
         )
         help_line = f"- {usage}: {command.description}. For {command.allowed_users}."
         help_lines.append(help_line)
@@ -265,15 +267,16 @@ def _release_review(
 
 def _set_priority(
     *,
-    priority_labels: pr_labels.PriorityLabels,
+    configured_labels: pr_labels.ConfiguredLabels,
     pull_request: pr_context.PullRequest,
     argument: str,
 ) -> pr_context.UpdatePlan:
+    priority_labels = configured_labels.priority_labels
     priority_label = priority_labels.get_label(argument)
     if priority_label is None:
         usage = _format_usage(
             command=Command.SET_PRIORITY,
-            priority_labels=priority_labels,
+            configured_labels=configured_labels,
         )
         return pr_context.UpdatePlan(reply=f"Use {usage}.")
     wanted_label_name = priority_label.label_name
@@ -363,7 +366,7 @@ def plan_update_from_comment(
         or (comment.user.role_in_repo in _ROLES_WITH_TRIAGE_ACCESS)
     )
     if command == Command.HELP:
-        return _help_reply(configured_labels.priority_labels)
+        return _help_reply(configured_labels)
     elif command == Command.ACCEPT_REVIEW:
         return _accept_review(
             pull_request=pull_request,
@@ -380,7 +383,7 @@ def plan_update_from_comment(
         return _author_or_triage_only_reply(command)
     elif command == Command.SET_PRIORITY:
         return _set_priority(
-            priority_labels=configured_labels.priority_labels,
+            configured_labels=configured_labels,
             pull_request=pull_request,
             argument=argument,
         )
