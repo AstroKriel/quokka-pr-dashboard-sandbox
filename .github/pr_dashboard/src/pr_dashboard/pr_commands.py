@@ -253,27 +253,31 @@ def _accept_review(
     argument: str,
 ) -> pr_context.UpdatePlan:
     try:
-        review_date = datetime.date.fromisoformat(argument)
+        review_by_date = datetime.date.fromisoformat(argument)
     except ValueError:
-        review_date = None
+        review_by_date = None
     today_in_utc = datetime.datetime.now(datetime.timezone.utc).date()
     # a day of slack: reviewers give their local date, which can be a day behind UTC
-    earliest_review_date = today_in_utc - datetime.timedelta(days=1)
+    earliest_review_by_date = today_in_utc - datetime.timedelta(days=1)
     if comment.user.role_in_repo not in _ROLES_WITH_WRITE_ACCESS:
         return pr_context.UpdatePlan(reply="Only maintainers (anyone with write access) can accept a review.")
     elif comment.user.user_name == pull_request.author_user_name:
         return pr_context.UpdatePlan(reply="You can't accept the review of your own PR.")
-    elif review_date is None:
+    elif review_by_date is None:
+        # argument could not be parsed
         return _plan_command_usage_reply(Commands.ACCEPT_REVIEW)
-    elif review_date < earliest_review_date:
+    elif review_by_date < earliest_review_by_date:
         return pr_context.UpdatePlan(
             reply=f"The review date has to be today or later. Use {Commands.ACCEPT_REVIEW.usage}.",
         )
     elif pull_request.assignee_user_names == (comment.user.user_name, ):
+        # already the reviewer: acknowledge the new date
         return pr_context.UpdatePlan(react=True)
     elif len(pull_request.assignee_user_names) > 0:
+        # someone else has the review: refuse, naming who
         return pr_context.UpdatePlan(reply=_format_review_taken_text(pull_request.assignee_user_names))
     else:
+        # nobody has the review: the commenter takes it
         return pr_context.UpdatePlan(
             assignee_user_names_to_add=(comment.user.user_name, ),
             react=True,
