@@ -1,6 +1,7 @@
 import dataclasses
 import datetime
 import enum
+import re
 
 from pr_dashboard import pr_context
 from pr_dashboard import pr_labels
@@ -137,6 +138,20 @@ def parse_command(
     )
 
 
+def extract_mentioned_commands(
+    comment_text: str,
+) -> tuple[Commands, ...]:
+    commands_by_text = {_command.text: _command for _command in Commands}
+    command_text_options = "|".join(re.escape(_command_text) for _command_text in commands_by_text)
+    command_pattern = re.compile(rf"(?<![\w/-])({command_text_options})(?![\w-])")
+    mentioned_commands = []
+    for mentioned_text in command_pattern.findall(comment_text):
+        mentioned_command = commands_by_text[mentioned_text]
+        if mentioned_command not in mentioned_commands:
+            mentioned_commands.append(mentioned_command)
+    return tuple(mentioned_commands)
+
+
 ##
 ## === REPLIES
 ##
@@ -210,6 +225,19 @@ def _plan_command_access_refusal(
 ) -> pr_context.UpdatePlan:
     return pr_context.UpdatePlan(
         reply=f"Only the PR author and maintainers can use `{command.text}`.",
+    )
+
+
+def _plan_command_placement_reply(
+    mentioned_commands: tuple[Commands, ...],
+) -> pr_context.UpdatePlan:
+    command_texts = " or ".join(f"`{_command.text}`" for _command in mentioned_commands)
+    if len(mentioned_commands) == 1:
+        instruction = "post it at the start of a new comment"
+    else:
+        instruction = "post each at the start of its own comment"
+    return pr_context.UpdatePlan(
+        reply=f"Commands only run when they start a comment. To run {command_texts}, {instruction}.",
     )
 
 
@@ -366,8 +394,11 @@ def plan_update_from_comment(
     open_milestones: tuple[pr_context.Milestone, ...],
 ) -> pr_context.UpdatePlan | None:
     parsed_command = parse_command(comment.text)
-    if parsed_command is None:
+    mentioned_commands = extract_mentioned_commands(comment.text)
+    if (parsed_command is None) and (len(mentioned_commands) == 0):
         return None
+    elif parsed_command is None:
+        return _plan_command_placement_reply(mentioned_commands)
     command = parsed_command.command
     argument = parsed_command.argument
     commenter_is_author_or_triager = (

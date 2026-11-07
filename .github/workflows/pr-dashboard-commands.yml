@@ -18,7 +18,7 @@ jobs:
     if: |
       github.event.issue.pull_request != null &&
       github.event.comment.user.type != 'Bot' &&
-      startsWith(github.event.comment.body, '/')
+      contains(github.event.comment.body, '/')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the default branch

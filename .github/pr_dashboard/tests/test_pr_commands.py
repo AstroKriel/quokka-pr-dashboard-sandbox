@@ -115,6 +115,52 @@ class TestPrCommands_Parse(unittest.TestCase):
         self.assertIsNone(pr_commands.parse_command("   "))
 
 
+class TestPrCommands_Placement(unittest.TestCase):
+
+    def test_command_mid_sentence_gets_a_hint(
+        self,
+    ):
+        update_plan_from_comment = run_command(text="Thanks! /set-priority high")
+        expected_reply = (
+            "Commands only run when they start a comment. "
+            "To run `/set-priority`, post it at the start of a new comment."
+        )
+        self.assertEqual(update_plan_from_comment, pr_context.UpdatePlan(reply=expected_reply))
+
+    def test_command_on_a_later_line_gets_a_hint(
+        self,
+    ):
+        update_plan_from_comment = run_command(text="Looks good.\n/release-review")
+        self.assertTrue(
+            update_plan_from_comment.reply.startswith("Commands only run when they start a comment.")
+        )
+
+    def test_several_commands_are_each_named(
+        self,
+    ):
+        update_plan_from_comment = run_command(text="Use /help or /set-priority low")
+        expected_reply = (
+            "Commands only run when they start a comment. "
+            "To run `/help` or `/set-priority`, post each at the start of its own comment."
+        )
+        self.assertEqual(update_plan_from_comment, pr_context.UpdatePlan(reply=expected_reply))
+
+    def test_command_inside_a_url_path_is_not_a_command(
+        self,
+    ):
+        self.assertIsNone(run_command(text="See https://example.org/docs/help for more."))
+
+    def test_misspelt_command_gets_no_hint(
+        self,
+    ):
+        self.assertIsNone(run_command(text="Thanks! /accept-reveiw tomorrow"))
+
+    def test_comment_without_commands_gets_nothing(
+        self,
+    ):
+        self.assertIsNone(run_command(text="Looks good, thanks!"))
+
+
 class TestPrCommands_AcceptReview(unittest.TestCase):
 
     def test_free_review_is_assigned(

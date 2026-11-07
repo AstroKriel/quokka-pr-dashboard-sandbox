@@ -62,7 +62,7 @@ def run_command_from_comment(
     if "pull_request" not in event_data["issue"]:
         return
     comment_text = event_data["comment"]["body"]
-    if pr_commands.parse_command(comment_text) is None:
+    if len(pr_commands.extract_mentioned_commands(comment_text)) == 0:
         return
     user_name = event_data["comment"]["user"]["login"]
     user = github_api.get_user(
