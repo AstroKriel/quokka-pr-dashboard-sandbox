@@ -186,7 +186,7 @@ def _plan_command_usage_reply(
 def _plan_command_help_reply(
     configured_labels: pr_labels.ConfiguredLabels,
 ) -> pr_context.UpdatePlan:
-    help_lines = ["PR dashboard commands:"]
+    help_lines = ["PR dashboard commands (each must start its comment):"]
     for command in Commands:
         usage = _format_usage(
             command=command,

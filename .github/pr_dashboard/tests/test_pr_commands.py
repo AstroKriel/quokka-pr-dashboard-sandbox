@@ -132,7 +132,7 @@ class TestPrCommands_Placement(unittest.TestCase):
     ):
         update_plan_from_comment = run_command(text="Looks good.\n/release-review")
         self.assertTrue(
-            update_plan_from_comment.reply.startswith("Commands only run when they start a comment.")
+            update_plan_from_comment.reply.startswith("Commands only run when they start a comment."),
         )
 
     def test_several_commands_are_each_named(
@@ -501,13 +501,17 @@ class TestPrCommands_Help(unittest.TestCase):
             user_name="passer-by",
             role_in_repo=pr_context.RoleInRepo.READ,
         )
-        self.assertTrue(update_plan_from_comment.reply.startswith("PR dashboard commands:"))
+        self.assertTrue(
+            update_plan_from_comment.reply.startswith("PR dashboard commands (each must start its comment):")
+        )
 
     def test_extra_words_are_ignored(
         self,
     ):
         update_plan_from_comment = run_command(text="/help me please")
-        self.assertTrue(update_plan_from_comment.reply.startswith("PR dashboard commands:"))
+        self.assertTrue(
+            update_plan_from_comment.reply.startswith("PR dashboard commands (each must start its comment):")
+        )
 
     def test_changes_nothing(
         self,
