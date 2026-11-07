@@ -65,16 +65,17 @@ Decisions I made along the way, and why.
 
 ### Labels
 
-- **The tools manage only the label categories configured in `labels.toml`,** rather than every label on a PR. Any other label, such as one added by hand for another reason, is never touched. Within the scope and size categories the tools decide the labels, so one edited by hand is replaced the next time the PR is labelled. A priority is only set when a PR has none.
-- **A file with no matching scope is flagged,** rather than given a fallback scope. A fallback would hide a missing pattern; the flag shows it, so the labels can be trusted to describe the whole change.
+- **The tools only manage the `scope/`, `size/` and `priority/` labels,** rather than every label on a PR. Labels without these prefixes are left alone. `scope/` and `size/` labels edited by hand are replaced when the labels are recalculated, and `priority/medium` is only added when a PR has no `priority/` label.
+- **A file with no matching scope gives the PR the `scope/not_mapped` label,** rather than a fallback scope. The label shows where `labels.toml` is missing a pattern.
 
 ### Commands
 
-- **Commands only run when they are at the start of a comment,** rather than anywhere in it. People mention commands in passing, quote them and paste examples. A command anywhere else is not run, and the comment gets a reply saying how to run it.
-- **Every command gets visible feedback,** rather than succeeding or failing silently. A thumbs-up reaction means it ran; a reply means it was read but not run, and the reply says why. Misspelt commands are ignored, since other tools on Quokka also use commands that start with `/`.
-- **One reviewer holds a review at a time,** rather than everyone who is asked to review. `/accept-review` makes the commenter the assignee of the PR, and refuses while someone else holds the review, so it is always clear who is responsible. Anyone can still comment and review.
-- **Reviewers give their review deadline as a local date,** rather than working it out in UTC. Quokka is maintained from around the world and GitHub works in UTC, so a local today can be yesterday in UTC; a date up to one day in the past is therefore accepted.
+- **Commands only run at the start of a comment,** rather than anywhere in it, so a command quoted or mentioned in passing is not run. A command found elsewhere gets a reply saying how to run it.
+- **Every command gets visible feedback,** rather than failing silently. A thumbs-up means it ran; a reply says why it did not. Misspelt commands are ignored, since other tools on Quokka also use `/` commands.
+- **One reviewer holds a review at a time,** rather than everyone asked to review, so it is clear who is responsible. `/accept-review` assigns the commenter, and refuses while someone else holds the review.
+- **The date given to `/accept-review` is read as a local date,** rather than a UTC date, since Quokka is maintained from around the world. A date up to one day in the past is accepted.
 
 ### Running the Code
 
-- **The labels workflow uses `pull_request_target`,** rather than `pull_request`. Only `pull_request_target` can label PRs from forks. It is safe here because the workflow checks out only these tools from the base branch, and never runs code from the PR.
+- **The tools only use what GitHub already tracks,** rather than keeping their own records. Each run reads the PR from GitHub and writes its changes back as labels, assignees, milestones, reactions and replies.
+- **The labels workflow uses `pull_request_target`,** rather than `pull_request`, so it can label PRs from forks. It is safe because it checks out only these tools from the base branch and never runs code from the PR.
