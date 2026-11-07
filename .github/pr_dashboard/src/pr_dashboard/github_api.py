@@ -27,8 +27,11 @@ def _run_gh_api(
         input=input_text,
         capture_output=True,
         text=True,
-        check=True,
     )
+    if completed_process.returncode != 0:
+        cmd_text = " ".join(cmd_parts)
+        error_text = completed_process.stderr.strip()
+        raise RuntimeError(f"`{cmd_text}` failed: {error_text}")
     return completed_process.stdout
 
 
