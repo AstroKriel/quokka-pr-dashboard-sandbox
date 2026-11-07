@@ -1,5 +1,6 @@
 import argparse
 import dataclasses
+import enum
 import json
 import pathlib
 
@@ -10,6 +11,13 @@ from pr_dashboard import pr_context
 from pr_dashboard import pr_labels
 
 LABELS_TOML_PATH = pathlib.Path(__file__).parents[2] / "labels.toml"
+
+
+class LabelUpdateActions(enum.StrEnum):
+    CREATE = "create"
+    UPDATE = "update"
+    LEAVE = "leave"
+
 
 ##
 ## === ACTIONS
@@ -102,15 +110,15 @@ def get_label_update_action(
     *,
     label: pr_labels.Label,
     repo_labels: dict[str, dict],
-) -> str | None:
+) -> LabelUpdateActions:
     existing_label_data = repo_labels.get(label.label_name)
     if existing_label_data is None:
-        return "create"
+        return LabelUpdateActions.CREATE
     elif ((existing_label_data["color"].lower() == label.color.lower())
           and (existing_label_data["description"] == label.description)):
-        return None
+        return LabelUpdateActions.LEAVE
     else:
-        return "update"
+        return LabelUpdateActions.UPDATE
 
 
 def update_repo_labels(
@@ -125,25 +133,27 @@ def update_repo_labels(
             label=label,
             repo_labels=repo_labels,
         )
-        if update_action is None:
+        if update_action == LabelUpdateActions.LEAVE:
             continue
         print(f"{update_action} {label.label_name}")
         if dry_run:
             continue
-        elif update_action == "create":
+        elif update_action == LabelUpdateActions.CREATE:
             github_api.create_label(
                 repo=repo,
                 name=label.label_name,
                 color=label.color,
                 description=label.description,
             )
-        else:
+        elif update_action == LabelUpdateActions.UPDATE:
             github_api.update_label(
                 repo=repo,
                 name=label.label_name,
                 color=label.color,
                 description=label.description,
             )
+        else:
+            raise ValueError(f"`update_repo_labels` has no branch for action `{update_action}`.")
 
 
 ##
