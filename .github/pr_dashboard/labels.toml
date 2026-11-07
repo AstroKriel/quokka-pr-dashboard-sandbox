@@ -1,4 +1,4 @@
-## the labels used by the PR dashboard; labels not listed here are left alone
+## the labels used by the PR dashboard; labels not listed here are left alone 
 ## each category sets a prefix, and each label's name on GitHub is the prefix plus its value
 ## scope/ and size/ labels are set by the tool; edits by hand are replaced
 
