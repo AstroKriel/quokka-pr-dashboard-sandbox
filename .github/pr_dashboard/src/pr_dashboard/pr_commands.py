@@ -27,7 +27,7 @@ _ROLES_WITH_WRITE_ACCESS = (
 
 
 @dataclasses.dataclass(frozen=True)
-class CommandInterface:
+class Command:
     text: str
     argument_hint: str
     description: str
@@ -43,38 +43,38 @@ class CommandInterface:
             return f"`{self.text} {self.argument_hint}`"
 
 
-class Command(enum.Enum):
-    ACCEPT_REVIEW = CommandInterface(
+class Commands(enum.Enum):
+    ACCEPT_REVIEW = Command(
         text="/accept-review",
         argument_hint="<YYYY-MM-DD>",
         description="take on this PR's review, with the date you will review by",
         allowed_users="maintainers (anyone with write access)",
     )
-    RELEASE_REVIEW = CommandInterface(
+    RELEASE_REVIEW = Command(
         text="/release-review",
         argument_hint="",
         description="give the review back",
         allowed_users="the current reviewer",
     )
-    SET_PRIORITY = CommandInterface(
+    SET_PRIORITY = Command(
         text="/set-priority",
         argument_hint="<{priority_values}>",
         description="set this PR's priority",
         allowed_users="the PR author, or maintainers",
     )
-    SET_MILESTONE = CommandInterface(
+    SET_MILESTONE = Command(
         text="/set-milestone",
         argument_hint="<title|none>",
         description="set or remove this PR's milestone",
         allowed_users="the PR author, or maintainers",
     )
-    RECOMPUTE_LABELS = CommandInterface(
+    RECOMPUTE_LABELS = Command(
         text="/recompute-labels",
         argument_hint="",
         description="recalculate the scope and size labels",
         allowed_users="the PR author, or maintainers",
     )
-    HELP = CommandInterface(
+    HELP = Command(
         text="/help",
         argument_hint="",
         description="show this list",
@@ -113,7 +113,7 @@ class Command(enum.Enum):
 
 @dataclasses.dataclass(frozen=True)
 class ParsedCommand:
-    command: Command
+    command: Commands
     argument: str
 
 
@@ -124,7 +124,7 @@ def parse_command(
     if len(comment_lines) == 0:
         return None
     first_line_words = comment_lines[0].split(maxsplit=1)
-    matching_commands = [_command for _command in Command if _command.text == first_line_words[0]]
+    matching_commands = [_command for _command in Commands if _command.text == first_line_words[0]]
     if len(matching_commands) == 0:
         return None
     if len(first_line_words) == 1:
@@ -155,7 +155,7 @@ def _get_usage_placeholder_values(
 
 def _format_usage(
     *,
-    command: Command,
+    command: Commands,
     configured_labels: pr_labels.ConfiguredLabels,
 ) -> str:
     placeholder_values = _get_usage_placeholder_values(configured_labels)
@@ -163,7 +163,7 @@ def _format_usage(
 
 
 def _usage_reply(
-    command: Command,
+    command: Commands,
 ) -> pr_context.UpdatePlan:
     return pr_context.UpdatePlan(reply=f"Use {command.usage}.")
 
@@ -172,7 +172,7 @@ def _help_reply(
     configured_labels: pr_labels.ConfiguredLabels,
 ) -> pr_context.UpdatePlan:
     help_lines = ["PR dashboard commands:"]
-    for command in Command:
+    for command in Commands:
         usage = _format_usage(
             command=command,
             configured_labels=configured_labels,
@@ -206,7 +206,7 @@ def _review_taken_reply(
 
 
 def _author_or_triage_only_reply(
-    command: Command,
+    command: Commands,
 ) -> pr_context.UpdatePlan:
     return pr_context.UpdatePlan(
         reply=f"Only the PR author and maintainers can use `{command.text}`.",
@@ -236,10 +236,10 @@ def _accept_review(
     elif comment.user.user_name == pull_request.author_user_name:
         return pr_context.UpdatePlan(reply="You can't accept the review of your own PR.")
     elif review_date is None:
-        return _usage_reply(Command.ACCEPT_REVIEW)
+        return _usage_reply(Commands.ACCEPT_REVIEW)
     elif review_date < earliest_review_date:
         return pr_context.UpdatePlan(
-            reply=f"The review date has to be today or later. Use {Command.ACCEPT_REVIEW.usage}.",
+            reply=f"The review date has to be today or later. Use {Commands.ACCEPT_REVIEW.usage}.",
         )
     elif pull_request.assignee_user_names == (comment.user.user_name, ):
         return pr_context.UpdatePlan(react=True)
@@ -259,7 +259,7 @@ def _release_review(
     argument: str,
 ) -> pr_context.UpdatePlan:
     if argument != "":
-        return _usage_reply(Command.RELEASE_REVIEW)
+        return _usage_reply(Commands.RELEASE_REVIEW)
     elif comment.user.user_name in pull_request.assignee_user_names:
         return pr_context.UpdatePlan(
             assignee_user_names_to_remove=(comment.user.user_name, ),
@@ -284,7 +284,7 @@ def _set_priority(
     priority_label = priority_labels.get_label(argument)
     if priority_label is None:
         usage = _format_usage(
-            command=Command.SET_PRIORITY,
+            command=Commands.SET_PRIORITY,
             configured_labels=configured_labels,
         )
         return pr_context.UpdatePlan(reply=f"Use {usage}.")
@@ -313,7 +313,7 @@ def _set_milestone(
         _milestone for _milestone in open_milestones if _milestone.title.lower() == argument.lower()
     ]
     if argument == "":
-        return _usage_reply(Command.SET_MILESTONE)
+        return _usage_reply(Commands.SET_MILESTONE)
     elif argument.lower() == "none":
         return pr_context.UpdatePlan(
             milestone_change=pr_context.MilestoneChange(milestone_number=None),
@@ -345,7 +345,7 @@ def _recompute_labels(
     argument: str,
 ) -> pr_context.UpdatePlan:
     if argument != "":
-        return _usage_reply(Command.RECOMPUTE_LABELS)
+        return _usage_reply(Commands.RECOMPUTE_LABELS)
     update_plan_from_pr = pr_labels.plan_update_from_pr(
         configured_labels=configured_labels,
         pull_request=pull_request,
@@ -374,15 +374,15 @@ def plan_update_from_comment(
         (comment.user.user_name == pull_request.author_user_name)
         or (comment.user.role_in_repo in _ROLES_WITH_TRIAGE_ACCESS)
     )
-    if command == Command.HELP:
+    if command == Commands.HELP:
         return _help_reply(configured_labels)
-    elif command == Command.ACCEPT_REVIEW:
+    elif command == Commands.ACCEPT_REVIEW:
         return _accept_review(
             pull_request=pull_request,
             comment=comment,
             argument=argument,
         )
-    elif command == Command.RELEASE_REVIEW:
+    elif command == Commands.RELEASE_REVIEW:
         return _release_review(
             pull_request=pull_request,
             comment=comment,
@@ -390,18 +390,18 @@ def plan_update_from_comment(
         )
     elif not commenter_is_author_or_triager:
         return _author_or_triage_only_reply(command)
-    elif command == Command.SET_PRIORITY:
+    elif command == Commands.SET_PRIORITY:
         return _set_priority(
             configured_labels=configured_labels,
             pull_request=pull_request,
             argument=argument,
         )
-    elif command == Command.SET_MILESTONE:
+    elif command == Commands.SET_MILESTONE:
         return _set_milestone(
             open_milestones=open_milestones,
             argument=argument,
         )
-    elif command == Command.RECOMPUTE_LABELS:
+    elif command == Commands.RECOMPUTE_LABELS:
         return _recompute_labels(
             configured_labels=configured_labels,
             pull_request=pull_request,

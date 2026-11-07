@@ -94,7 +94,7 @@ class TestPrCommands_Parse(unittest.TestCase):
             "/set-milestone Rewrite RHD module\nThis belongs to the rewrite.",
         )
         expected_parsed_command = pr_commands.ParsedCommand(
-            command=pr_commands.Command.SET_MILESTONE,
+            command=pr_commands.Commands.SET_MILESTONE,
             argument="Rewrite RHD module",
         )
         self.assertEqual(parsed_command, expected_parsed_command)
@@ -104,7 +104,7 @@ class TestPrCommands_Parse(unittest.TestCase):
     ):
         parsed_command = pr_commands.parse_command("/release-review")
         expected_parsed_command = pr_commands.ParsedCommand(
-            command=pr_commands.Command.RELEASE_REVIEW,
+            command=pr_commands.Commands.RELEASE_REVIEW,
             argument="",
         )
         self.assertEqual(parsed_command, expected_parsed_command)
@@ -180,13 +180,13 @@ class TestPrCommands_AcceptReview(unittest.TestCase):
         self,
     ):
         update_plan_from_comment = run_command(text="/accept-review")
-        self.assertEqual(update_plan_from_comment.reply, f"Use {pr_commands.Command.ACCEPT_REVIEW.usage}.")
+        self.assertEqual(update_plan_from_comment.reply, f"Use {pr_commands.Commands.ACCEPT_REVIEW.usage}.")
 
     def test_unreadable_date(
         self,
     ):
         update_plan_from_comment = run_command(text="/accept-review next week")
-        self.assertEqual(update_plan_from_comment.reply, f"Use {pr_commands.Command.ACCEPT_REVIEW.usage}.")
+        self.assertEqual(update_plan_from_comment.reply, f"Use {pr_commands.Commands.ACCEPT_REVIEW.usage}.")
 
     def test_past_date(
         self,
@@ -433,7 +433,7 @@ class TestPrCommands_Help(unittest.TestCase):
         self,
     ):
         update_plan_from_comment = run_command(text="/help")
-        for command in pr_commands.Command:
+        for command in pr_commands.Commands:
             with self.subTest(command_text=command.text):
                 self.assertIn(f"`{command.text}", update_plan_from_comment.reply)
 
