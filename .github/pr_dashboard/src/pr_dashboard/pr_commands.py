@@ -291,8 +291,10 @@ def _release_review(
     argument: str,
 ) -> pr_context.UpdatePlan:
     if argument != "":
+        # the command takes no argument
         return _plan_command_usage_reply(Commands.RELEASE_REVIEW)
     elif comment.user.user_name in pull_request.assignee_user_names:
+        # the reviewer gives the review back: unassign them
         return pr_context.UpdatePlan(
             assignee_user_names_to_remove=(comment.user.user_name, ),
             react=True,
