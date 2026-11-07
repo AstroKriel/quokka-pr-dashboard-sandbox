@@ -257,7 +257,7 @@ def _accept_review(
     except ValueError:
         review_date = None
     today_in_utc = datetime.datetime.now(datetime.timezone.utc).date()
-    # a day of slack, so a reviewer whose day is behind UTC can give their own today's date
+    # a day of slack: reviewers give their local date, which can be a day behind UTC
     earliest_review_date = today_in_utc - datetime.timedelta(days=1)
     if comment.user.role_in_repo not in _ROLES_WITH_WRITE_ACCESS:
         return pr_context.UpdatePlan(reply="Only maintainers (anyone with write access) can accept a review.")
