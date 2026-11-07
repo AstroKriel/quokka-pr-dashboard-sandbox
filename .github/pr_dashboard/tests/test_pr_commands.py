@@ -93,7 +93,21 @@ class TestPrCommands_Parse(unittest.TestCase):
         parsed_command = pr_commands.parse_command(
             "/set-milestone Rewrite RHD module\nThis belongs to the rewrite.",
         )
-        self.assertEqual(parsed_command, (pr_commands.Command.SET_MILESTONE, "Rewrite RHD module"))
+        expected_parsed_command = pr_commands.ParsedCommand(
+            command=pr_commands.Command.SET_MILESTONE,
+            argument="Rewrite RHD module",
+        )
+        self.assertEqual(parsed_command, expected_parsed_command)
+
+    def test_command_without_argument(
+        self,
+    ):
+        parsed_command = pr_commands.parse_command("/release-review")
+        expected_parsed_command = pr_commands.ParsedCommand(
+            command=pr_commands.Command.RELEASE_REVIEW,
+            argument="",
+        )
+        self.assertEqual(parsed_command, expected_parsed_command)
 
     def test_empty_comment(
         self,

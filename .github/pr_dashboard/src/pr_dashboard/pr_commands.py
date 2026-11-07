@@ -111,21 +111,30 @@ class Command(enum.Enum):
 ##
 
 
+@dataclasses.dataclass(frozen=True)
+class ParsedCommand:
+    command: Command
+    argument: str
+
+
 def parse_command(
     comment_text: str,
-) -> tuple[Command, str] | None:
-    lines = comment_text.strip().splitlines()
-    if len(lines) == 0:
+) -> ParsedCommand | None:
+    comment_lines = comment_text.strip().splitlines()
+    if len(comment_lines) == 0:
         return None
-    first_line_words = lines[0].split(maxsplit=1)
+    first_line_words = comment_lines[0].split(maxsplit=1)
     matching_commands = [_command for _command in Command if _command.text == first_line_words[0]]
     if len(matching_commands) == 0:
         return None
-    command = matching_commands[0]
     if len(first_line_words) == 1:
-        return command, ""
+        argument = ""
     else:
-        return command, first_line_words[1].strip()
+        argument = first_line_words[1].strip()
+    return ParsedCommand(
+        command=matching_commands[0],
+        argument=argument,
+    )
 
 
 ##
@@ -347,7 +356,8 @@ def plan_update_from_comment(
     parsed_command = parse_command(comment.text)
     if parsed_command is None:
         return None
-    command, argument = parsed_command
+    command = parsed_command.command
+    argument = parsed_command.argument
     commenter_is_author_or_triager = (
         (comment.user.user_name == pull_request.author_user_name)
         or (comment.user.role_in_repo in _ROLES_WITH_TRIAGE_ACCESS)
