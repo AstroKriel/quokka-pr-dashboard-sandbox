@@ -291,7 +291,7 @@ def _release_review(
     argument: str,
 ) -> pr_context.UpdatePlan:
     if argument != "":
-        # the command takes no argument
+        # the command received an argument even though it does not take one
         return _plan_command_usage_reply(Commands.RELEASE_REVIEW)
     elif comment.user.user_name in pull_request.assignee_user_names:
         # the reviewer gives the review back: unassign them
@@ -314,23 +314,24 @@ def _set_priority(
     pull_request: pr_context.PullRequest,
     argument: str,
 ) -> pr_context.UpdatePlan:
-    priority_labels = configured_labels.priority_labels
-    priority_label = priority_labels.get_label(argument)
-    if priority_label is None:
+    configured_priority_labels = configured_labels.priority_labels
+    chosen_priority_label = configured_priority_labels.get_label(argument)
+    if chosen_priority_label is None:
         usage = _format_usage(
             command=Commands.SET_PRIORITY,
             configured_labels=configured_labels,
         )
         return pr_context.UpdatePlan(reply=f"Use {usage}.")
-    wanted_label_name = priority_label.label_name
+    chosen_priority_label_name = chosen_priority_label.label_name
     label_names_to_remove = tuple(
         _label_name for _label_name in pull_request.label_names
-        if priority_labels.check_has_prefix(_label_name) and (_label_name != wanted_label_name)
+        if configured_priority_labels.check_has_prefix(_label_name) and
+        (_label_name != chosen_priority_label_name)
     )
-    if wanted_label_name in pull_request.label_names:
+    if chosen_priority_label_name in pull_request.label_names:
         label_names_to_add = ()
     else:
-        label_names_to_add = (wanted_label_name, )
+        label_names_to_add = (chosen_priority_label_name, )
     return pr_context.UpdatePlan(
         label_names_to_add=label_names_to_add,
         label_names_to_remove=label_names_to_remove,
