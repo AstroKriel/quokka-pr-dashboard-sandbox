@@ -162,13 +162,13 @@ def _format_usage(
     return command.usage.format(**placeholder_values)
 
 
-def _usage_reply(
+def _plan_command_usage_reply(
     command: Commands,
 ) -> pr_context.UpdatePlan:
     return pr_context.UpdatePlan(reply=f"Use {command.usage}.")
 
 
-def _help_reply(
+def _plan_command_help_reply(
     configured_labels: pr_labels.ConfiguredLabels,
 ) -> pr_context.UpdatePlan:
     help_lines = ["PR dashboard commands:"]
@@ -182,7 +182,7 @@ def _help_reply(
     return pr_context.UpdatePlan(reply="\n".join(help_lines))
 
 
-def _mention_list(
+def _format_user_mentions(
     user_names: tuple[str, ...],
 ) -> str:
     mentions = [f"@{_user_name}" for _user_name in user_names]
@@ -192,7 +192,7 @@ def _mention_list(
         return ", ".join(mentions[:-1]) + " and " + mentions[-1]
 
 
-def _review_taken_reply(
+def _format_review_taken_text(
     assignee_user_names: tuple[str, ...],
 ) -> str:
     if len(assignee_user_names) == 1:
@@ -200,12 +200,12 @@ def _review_taken_reply(
     else:
         verb = "have"
     return (
-        f"{_mention_list(assignee_user_names)} {verb} accepted this review. "
+        f"{_format_user_mentions(assignee_user_names)} {verb} accepted this review. "
         "You're welcome to leave a review or comment, or ask them to hand it over."
     )
 
 
-def _author_or_triage_only_reply(
+def _plan_command_access_refusal(
     command: Commands,
 ) -> pr_context.UpdatePlan:
     return pr_context.UpdatePlan(
@@ -236,7 +236,7 @@ def _accept_review(
     elif comment.user.user_name == pull_request.author_user_name:
         return pr_context.UpdatePlan(reply="You can't accept the review of your own PR.")
     elif review_date is None:
-        return _usage_reply(Commands.ACCEPT_REVIEW)
+        return _plan_command_usage_reply(Commands.ACCEPT_REVIEW)
     elif review_date < earliest_review_date:
         return pr_context.UpdatePlan(
             reply=f"The review date has to be today or later. Use {Commands.ACCEPT_REVIEW.usage}.",
@@ -244,7 +244,7 @@ def _accept_review(
     elif pull_request.assignee_user_names == (comment.user.user_name, ):
         return pr_context.UpdatePlan(react=True)
     elif len(pull_request.assignee_user_names) > 0:
-        return pr_context.UpdatePlan(reply=_review_taken_reply(pull_request.assignee_user_names))
+        return pr_context.UpdatePlan(reply=_format_review_taken_text(pull_request.assignee_user_names))
     else:
         return pr_context.UpdatePlan(
             assignee_user_names_to_add=(comment.user.user_name, ),
@@ -259,7 +259,7 @@ def _release_review(
     argument: str,
 ) -> pr_context.UpdatePlan:
     if argument != "":
-        return _usage_reply(Commands.RELEASE_REVIEW)
+        return _plan_command_usage_reply(Commands.RELEASE_REVIEW)
     elif comment.user.user_name in pull_request.assignee_user_names:
         return pr_context.UpdatePlan(
             assignee_user_names_to_remove=(comment.user.user_name, ),
@@ -268,7 +268,7 @@ def _release_review(
     elif len(pull_request.assignee_user_names) > 0:
         return pr_context.UpdatePlan(
             reply=
-            f"{_mention_list(pull_request.assignee_user_names)} accepted this review, so only they can release it.",
+            f"{_format_user_mentions(pull_request.assignee_user_names)} accepted this review, so only they can release it.",
         )
     else:
         return pr_context.UpdatePlan(reply="Nobody has accepted this review yet.")
@@ -313,7 +313,7 @@ def _set_milestone(
         _milestone for _milestone in open_milestones if _milestone.title.lower() == argument.lower()
     ]
     if argument == "":
-        return _usage_reply(Commands.SET_MILESTONE)
+        return _plan_command_usage_reply(Commands.SET_MILESTONE)
     elif argument.lower() == "none":
         return pr_context.UpdatePlan(
             milestone_change=pr_context.MilestoneChange(milestone_number=None),
@@ -345,7 +345,7 @@ def _recompute_labels(
     argument: str,
 ) -> pr_context.UpdatePlan:
     if argument != "":
-        return _usage_reply(Commands.RECOMPUTE_LABELS)
+        return _plan_command_usage_reply(Commands.RECOMPUTE_LABELS)
     update_plan_from_pr = pr_labels.plan_update_from_pr(
         configured_labels=configured_labels,
         pull_request=pull_request,
@@ -375,7 +375,7 @@ def plan_update_from_comment(
         or (comment.user.role_in_repo in _ROLES_WITH_TRIAGE_ACCESS)
     )
     if command == Commands.HELP:
-        return _help_reply(configured_labels)
+        return _plan_command_help_reply(configured_labels)
     elif command == Commands.ACCEPT_REVIEW:
         return _accept_review(
             pull_request=pull_request,
@@ -389,7 +389,7 @@ def plan_update_from_comment(
             argument=argument,
         )
     elif not commenter_is_author_or_triager:
-        return _author_or_triage_only_reply(command)
+        return _plan_command_access_refusal(command)
     elif command == Commands.SET_PRIORITY:
         return _set_priority(
             configured_labels=configured_labels,
