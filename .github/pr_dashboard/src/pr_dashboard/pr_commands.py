@@ -360,7 +360,7 @@ def _create_milestone(
     ]
     if comment.user.role_in_repo not in _ROLES_WITH_WRITE_ACCESS:
         return pr_context.UpdatePlan(
-            reply="Only maintainers (anyone with write access) can create a milestone."
+            reply="Only maintainers (anyone with write access) can create a milestone.",
         )
     elif argument == "":
         # the command received no milestone title

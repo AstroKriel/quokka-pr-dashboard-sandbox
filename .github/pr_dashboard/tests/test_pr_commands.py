@@ -417,7 +417,8 @@ class TestPrCommands_CreateMilestone(unittest.TestCase):
     ):
         update_plan_from_comment = run_command(text="/create-milestone")
         self.assertEqual(
-            update_plan_from_comment, pr_context.UpdatePlan(reply="Use `/create-milestone <title>`.")
+            update_plan_from_comment,
+            pr_context.UpdatePlan(reply="Use `/create-milestone <title>`."),
         )
 
     def test_open_title_is_refused_ignoring_case(
