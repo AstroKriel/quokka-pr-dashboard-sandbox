@@ -142,15 +142,24 @@ def parse_command(
 ##
 
 
+def _get_usage_placeholder_values(
+    configured_labels: pr_labels.ConfiguredLabels,
+) -> dict[str, str]:
+    priority_values = "|".join(
+        _priority_label.value for _priority_label in configured_labels.priority_labels.labels
+    )
+    return {
+        "priority_values": priority_values,
+    }
+
+
 def _format_usage(
     *,
     command: Command,
     configured_labels: pr_labels.ConfiguredLabels,
 ) -> str:
-    priority_values = "|".join(
-        _priority_label.value for _priority_label in configured_labels.priority_labels.labels
-    )
-    return command.usage.format(priority_values=priority_values)
+    placeholder_values = _get_usage_placeholder_values(configured_labels)
+    return command.usage.format(**placeholder_values)
 
 
 def _usage_reply(
