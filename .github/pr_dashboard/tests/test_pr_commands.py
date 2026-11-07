@@ -93,7 +93,7 @@ class TestPrCommands_Parse(unittest.TestCase):
         parsed_command = pr_commands.parse_command(
             "/set-milestone Rewrite RHD module\nThis belongs to the rewrite.",
         )
-        self.assertEqual(parsed_command, (pr_commands.SET_MILESTONE, "Rewrite RHD module"))
+        self.assertEqual(parsed_command, (pr_commands.Command.SET_MILESTONE, "Rewrite RHD module"))
 
     def test_empty_comment(
         self,
@@ -166,13 +166,13 @@ class TestPrCommands_AcceptReview(unittest.TestCase):
         self,
     ):
         update_plan_from_comment = run_command(text="/accept-review")
-        self.assertEqual(update_plan_from_comment.reply, f"Use {pr_commands.ACCEPT_REVIEW.usage}.")
+        self.assertEqual(update_plan_from_comment.reply, f"Use {pr_commands.Command.ACCEPT_REVIEW.usage}.")
 
     def test_unreadable_date(
         self,
     ):
         update_plan_from_comment = run_command(text="/accept-review next week")
-        self.assertEqual(update_plan_from_comment.reply, f"Use {pr_commands.ACCEPT_REVIEW.usage}.")
+        self.assertEqual(update_plan_from_comment.reply, f"Use {pr_commands.Command.ACCEPT_REVIEW.usage}.")
 
     def test_past_date(
         self,
@@ -419,9 +419,9 @@ class TestPrCommands_Help(unittest.TestCase):
         self,
     ):
         update_plan_from_comment = run_command(text="/help")
-        for command in pr_commands.COMMANDS:
-            with self.subTest(command_name=command.name):
-                self.assertIn(f"`{command.name}", update_plan_from_comment.reply)
+        for command in pr_commands.Command:
+            with self.subTest(command_text=command.text):
+                self.assertIn(f"`{command.text}", update_plan_from_comment.reply)
 
     def test_fills_in_the_priority_values(
         self,
