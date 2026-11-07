@@ -348,13 +348,16 @@ def _set_milestone(
         _milestone for _milestone in open_milestones if _milestone.title.lower() == argument.lower()
     ]
     if argument == "":
+        # the command received no milestone title
         return _plan_command_usage_reply(Commands.SET_MILESTONE)
     elif argument.lower() == "none":
+        # remove the PR's milestone
         return pr_context.UpdatePlan(
             milestone_change=pr_context.MilestoneChange(milestone_number=None),
             react=True,
         )
     elif len(matching_milestones) > 0:
+        # set the PR's milestone to the open milestone with that title
         milestone_change = pr_context.MilestoneChange(
             milestone_number=matching_milestones[0].milestone_number,
         )
