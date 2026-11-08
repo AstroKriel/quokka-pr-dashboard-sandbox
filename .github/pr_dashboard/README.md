@@ -1,6 +1,6 @@
 # PR Dashboard Tools
 
-These tools keep the labels on Quokka PRs in step with what each PR changes, and let people act on a PR by writing commands in its comments. How to use the commands and what the labels mean is described in the contributor documentation. This README is for anyone reviewing or changing the code.
+These tools keep the labels on Quokka PRs in step with what each PR changes, and let people act on a PR by writing commands in its comments. `/help` on any PR lists the commands, and each label has a description on GitHub. This README is for anyone reviewing or changing the code.
 
 ## Layout
 

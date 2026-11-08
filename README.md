@@ -1,15 +1,5 @@
 # Quokka PR Dashboard Sandbox
 
-A private test bed for the Quokka PR dashboard tools before they go into `quokka-astro/quokka`. The tools live in `.github/pr_dashboard/` (the `pr_dashboard` package in `src/pr_dashboard/`, tests in `tests/`, the labels in `labels.toml`) and `.github/workflows/pr-dashboard-*.yml`, at the same paths they will have in Quokka. The files under `src/`, `docs/` and `inputs/` are placeholders in Quokka's layout, to give test PRs something to change.
+A test bed for the Quokka PR dashboard tools, proposed for Quokka in quokka-astro/quokka#2433. The tools live in `.github/pr_dashboard/` and `.github/workflows/pr-dashboard-*.yml`, at the same paths as in Quokka; [`.github/pr_dashboard/README.md`](.github/pr_dashboard/README.md) covers how they work, how to run the tests, and how to debug a PR.
 
-Offline tests:
-
-```bash
-PYTHONPATH=.github/pr_dashboard/src python3 -m unittest discover --start-directory .github/pr_dashboard/tests --pattern "test_*.py"
-```
-
-A dry run against a real PR, which prints the planned label changes without writing anything:
-
-```bash
-PYTHONPATH=.github/pr_dashboard/src python3 -m pr_dashboard.run_dashboard label-pr --repo quokka-astro/quokka --pr <number> --dry-run
-```
+The files under `src/`, `docs/` and `inputs/` are placeholders in the Quokka layout, so test PRs have something to change.
